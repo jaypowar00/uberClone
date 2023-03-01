@@ -13,7 +13,8 @@ blackListedTokens = set()
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
-    'localhost'
+    'localhost',
+    'uber-clone-v1.onrender.com'
 ]
 
 INSTALLED_APPS = [
