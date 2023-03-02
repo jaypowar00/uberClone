@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'user',
+    'trip',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -63,6 +64,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'uberClone.wsgi.application'
 DATABASES = {
     'default': {
+        # 'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_UC_NAME', 'db_uberclone'),
         'PORT': os.getenv('DB_UC_PORT', '5432'),
@@ -141,4 +143,3 @@ REST_FRAMEWORK = {
     ],
     'EXCEPTION_HANDLER': 'user.utils.custom_exception_handler'
 }
-

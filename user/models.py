@@ -87,7 +87,9 @@ class TripLocations(models.Model):
     address = models.CharField(max_length=128)
     thumbnail = models.URLField()
     description = models.CharField(max_length=128)
-    location = models.CharField(max_length=50)
+    lon = models.FloatField(null=True)
+    lat = models.FloatField(null=True)
+    # objects = models.GeoManager()
 
 
 class Ride(models.Model):
