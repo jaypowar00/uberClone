@@ -38,7 +38,7 @@ def custom_exception_handler(exc, context):
             del response.data['detail']
             response.data['status'] = False
             response.data['message'] = 'Unauthorized access'
-        if response.data['detail'] == 'User not found' and response.data['detail'].code == 'authentication_failed':
+        elif response.data['detail'] == 'User not found' and response.data['detail'].code == 'authentication_failed':
             del response.data['detail']
             response.data['status'] = False
             response.data['message'] = 'User (for requested access token) does not exists!'

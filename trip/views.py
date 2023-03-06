@@ -67,6 +67,6 @@ def get_location_path(request):
     return Response(
         {
             'status': True,
-            'route': response['route']
+            'route': response['route'] if response else {}
         }
     )

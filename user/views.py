@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from uberClone import settings
 from uberClone.settings import blackListedTokens
 from user.decorators import check_blacklisted_token
-from user.models import User, Driver, Rating
+from user.models import User, Driver
 from user.serializers import UserSerializer
 from user.utils import generate_access_token, generate_refresh_token
 

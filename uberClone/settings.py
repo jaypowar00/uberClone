@@ -10,6 +10,7 @@ REFRESH_SECRET_KEY = '0z-yx764r0qk+b3zp#erzeka7@32q9bzv^7h&c8d%+@3^o@de@'
 DEBUG = True
 
 blackListedTokens = set()
+connected_users = {}
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
@@ -18,10 +19,11 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
-    'corsheaders',
-    'rest_framework',
+    'daphne',
     'user',
     'trip',
+    'corsheaders',
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -62,6 +64,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'uberClone.wsgi.application'
+ASGI_APPLICATION = 'uberClone.routing.application'
 DATABASES = {
     'default': {
         # 'ENGINE': 'django.contrib.gis.db.backends.postgis',
@@ -71,9 +74,9 @@ DATABASES = {
         'HOST': os.getenv('DB_UC_HOST_URL', 'localhost'),
         'USER': os.getenv('DB_UC_USERNAME', 'postgres'),
         'PASSWORD': os.getenv('DB_UC_PASSWORD', 'super'),
-        # 'OPTIONS': {
-        #     'sslmode': 'require'
-        # }
+        'OPTIONS': {
+            'sslmode': 'require'
+        }
     }
 }
 
@@ -103,7 +106,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfolder')
+STATICFILES_DIR = [os.path.join(BASE_DIR, "static")]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -142,4 +146,24 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ],
     'EXCEPTION_HANDLER': 'user.utils.custom_exception_handler'
+}
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'CONFIG': {
+            "hosts": [os.environ.get('UC_REDIS_URL', 'redis://localhost:6379')],
+        },
+    },
+}
+
+CACHES = {
+    "default": {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': [os.environ.get('UC_REDIS_URL', 'redis://localhost:6379')],
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient'
+        }
+    }
 }
