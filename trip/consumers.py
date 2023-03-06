@@ -77,6 +77,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                         geopy.distance.distance((self.var_coordinates[index]), (self.var_coordinates[index + 1])))
                 print(f'distances_list length: {len(self.distances_between_all_geometry_pairs)}')
                 print(self.distances_between_all_geometry_pairs)
+                print(f'len_cords: {len(self.var_coordinates)}')
+                print(self.var_coordinates)
                 self.current_distance = 0
                 self.current_sent_distance = 0
                 await self.channel_layer.group_send(
@@ -105,26 +107,48 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 #     print(f"{f'index: {passed_index}' : <8} | {f'distance_pop: {self.distances_between_all_geometry_pairs[passed_index-1].meters}': <33} | {f'distance_sent: {self.current_sent_distance}': <33} | {f'distance_travelled: {self.current_distance}': <33}")
                 if (self.distances_between_all_geometry_pairs[passed_index-1].meters + self.current_sent_distance) <= self.current_distance:
                     self.current_sent_distance += self.distances_between_all_geometry_pairs[passed_index-1].meters
-                    await self.channel_layer.group_send(
-                        self.live_session_group_name,
-                        {
-                            'type': 'websocket_text',
-                            'driver_loc': self.var_coordinates[passed_index],
-                            'passed_index': passed_index+1
-                        }
-                    )
+                    if passed_index == len(self.var_coordinates)-1:
+                        await self.channel_layer.group_send(
+                            self.live_session_group_name,
+                            {
+                                'type': 'websocket_text',
+                                'driver_loc': self.var_coordinates[passed_index],
+                                'passed_index': passed_index+1,
+                                'state': 'r'
+                            }
+                        )
+                    else:
+                        await self.channel_layer.group_send(
+                            self.live_session_group_name,
+                            {
+                                'type': 'websocket_text',
+                                'driver_loc': self.var_coordinates[passed_index],
+                                'passed_index': passed_index+1
+                            }
+                        )
                     print(f"{f'index: {passed_index}' : <8} | {f'distance_pop: {self.distances_between_all_geometry_pairs[passed_index-1].meters}': <33} | {f'distance_sent: {self.current_sent_distance}': <33} | {f'distance_travelled: {self.current_distance}': <33}")
                     # current_index += 1
                 else:
                     print(f"{f'index: {passed_index}' : <8} | {f'distance_pop: {self.distances_between_all_geometry_pairs[passed_index-1].meters if passed_index != 0 else 0.0} (same)': <33} | {f'distance_sent: {self.current_sent_distance}': <33} | {f'distance_travelled: {self.current_distance}': <33}")
-                    await self.channel_layer.group_send(
-                        self.live_session_group_name,
-                        {
-                            'type': 'websocket_text',
-                            'driver_loc': self.var_coordinates[passed_index],
-                            'passed_index': passed_index
-                        }
-                    )
+                    if passed_index == len(self.var_coordinates)-1:
+                        await self.channel_layer.group_send(
+                            self.live_session_group_name,
+                            {
+                                'type': 'websocket_text',
+                                'driver_loc': self.var_coordinates[passed_index],
+                                'passed_index': passed_index,
+                                'state': 'r'
+                            }
+                        )
+                    else:
+                        await self.channel_layer.group_send(
+                            self.live_session_group_name,
+                            {
+                                'type': 'websocket_text',
+                                'driver_loc': self.var_coordinates[passed_index],
+                                'passed_index': passed_index
+                            }
+                        )
 
     async def disconnect(self, code):
         if self.scope['user'].is_authenticated:
@@ -178,7 +202,14 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 'customer_loc': event['customer_loc']
             }))
         else:
-            await self.send(text_data=json.dumps({
-                'driver_loc': location,
-                'new_index': int(event['passed_index'])
-            }))
+            if 'state' in event:
+                await self.send(text_data=json.dumps({
+                    'driver_loc': location,
+                    'new_index': int(event['passed_index']),
+                    'state': event['state']
+                }))
+            else:
+                await self.send(text_data=json.dumps({
+                    'driver_loc': location,
+                    'new_index': int(event['passed_index'])
+                }))
