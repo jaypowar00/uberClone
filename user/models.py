@@ -51,11 +51,12 @@ class Vehicle(models.Model):
         BIKE = 'BIKE', 'Bike'
         CAR_SEDAN = 'SEDAN', 'Car_Sedan'
         CAR_SUV = 'SUV', 'Car_Suv'
-        RIKSHAW = 'R', 'Rikshaw'
+        RIKSHAW = 'RIK', 'Rikshaw'
 
     vehicle_number = models.CharField(max_length=50)
-    seat_capacity = models.IntegerField()
-    mileage = models.FloatField()
+    seat_capacity = models.IntegerField(null=True, default=None)
+    mileage = models.FloatField(null=True, default=None)
+    vehicle_type = models.CharField(max_length=5, choices=Type.choices, default=Type.CAR_SEDAN, null=True)
 
 
 class Rating(models.Model):
