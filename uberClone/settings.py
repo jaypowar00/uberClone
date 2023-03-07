@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'daphne',
     'user',
     'trip',
+    'driver',
     'corsheaders',
     'rest_framework',
     'django.contrib.admin',
