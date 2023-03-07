@@ -328,6 +328,9 @@ def user_update(request):
         user.gender = jsn['gender'] if 'gender' in jsn else user.gender
         user.about = jsn['about'] if 'about' in jsn else user.about
         user.save()
+        if user.account_type == user.AccountType.DRIVER and 'driver_license' in jsn:
+            user.driver.driver_license = jsn['driver_license']
+            user.driver.save()
     except IntegrityError as err:
         print(str(err).split('\n')[1].split('(')[1].split(')')[0])
         dup = str(err).split('\n')[1].split('(')[1].split(')')[0]
