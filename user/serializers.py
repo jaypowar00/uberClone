@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, TripLocations
+from .models import User, TripLocations, Vehicle
 import geocoder
 
 
@@ -8,6 +8,20 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'public_id', 'email', 'name', 'username', 'address', 'gender', 'phone', 'dob', 'account_type', 'date_joined', 'about']
 
+
+class VehicleSerializer(serializers.ModelSerializer):
+    type = serializers.SerializerMethodField('get_vehicle_type')
+    class Meta:
+        model = Vehicle
+        fields = ['id', 'vehicle_number', 'seat_capacity', 'mileage', 'type']
+
+    def get_vehicle_type(self, vehicle_obj):
+        type_str = vehicle_obj.vehicle_type
+        type_str = 'Sedan' if type_str == vehicle_obj.Type.CAR_SEDAN \
+            else 'Suv' if type_str == vehicle_obj.Type.CAR_SUV \
+            else 'Rikshaw' if type_str == vehicle_obj.Type.RIKSHAW \
+            else 'BIKE'
+        return type_str
 
 class TripLocationsSerializer(serializers.ModelSerializer):
     geo = serializers.SerializerMethodField('get_geo_details')
