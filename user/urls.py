@@ -10,5 +10,4 @@ urlpatterns = [
     path('delete', views.user_delete),
     path('update', views.user_update),
     path('update/password', views.user_update_password),
-    path('trip/', include('trip.urls'))
 ]
