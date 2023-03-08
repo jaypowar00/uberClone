@@ -11,8 +11,7 @@ from user.serializers import VehicleSerializer
 @check_blacklisted_token
 def add_vehicle(request):
     try:
-        print('[+] request.user.driver')
-        print(request.user.driver)
+        driver = request.user.driver
     except User.driver.RelatedObjectDoesNotExist:
         return Response(
             {
@@ -20,9 +19,7 @@ def add_vehicle(request):
                 'message': 'only driver accounts can use this feature'
             }
         )
-    print('[+] request.user.driver.vehicle')
-    print(request.user.driver.vehicle)
-    if request.user.driver.vehicle is None:
+    if driver.vehicle is None:
         jsn = request.data
         if not ('vehicle_no' in jsn and 'seat_cap' in jsn and 'mileage' in jsn and 'vehicle_type' in jsn):
             return Response(
@@ -38,8 +35,8 @@ def add_vehicle(request):
             vehicle_type=jsn['vehicle_type']
         )
         vehicle.save()
-        request.user.driver.vehicle = vehicle
-        request.user.driver.save()
+        driver.vehicle = vehicle
+        driver.save()
 
         return Response(
             {
