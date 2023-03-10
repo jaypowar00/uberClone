@@ -74,7 +74,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
 
     async def mock_driver_motion(self, event):
         print('[+] inside mock_driver_motion')
-        max_radius = 50.0
+        max_radius = 500.0
         # max_radius = math.sqrt(((random.uniform(2, 5)*1000)*2)/2.0)
         offset = 10 ** (math.log10(max_radius/1.11)-5)
         from_mock_lat = self.scope['ride']['loc']['from_lat'] + random.sample([1, -1], 1)[0] * offset
