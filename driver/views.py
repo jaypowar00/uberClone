@@ -1,7 +1,8 @@
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import permission_classes, api_view
-from user.models import Vehicle, Driver, User
+from user.models import Vehicle, User
 from user.decorators import check_blacklisted_token
 from user.serializers import VehicleSerializer
 
@@ -99,6 +100,7 @@ def vehicle_details(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
+@csrf_exempt
 def update_vehicle(request):
     try:
         driver = request.user.driver
@@ -142,6 +144,7 @@ def update_vehicle(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
+@csrf_exempt
 def delete_vehicle(request):
     try:
         driver = request.user.driver

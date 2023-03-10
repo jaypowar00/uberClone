@@ -42,6 +42,7 @@ def user_home(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@csrf_exempt
 def user_register(request):
     context = {}
     jsn: dict
@@ -149,6 +150,7 @@ def user_login(request):
 
 
 @api_view(['POST'])
+@csrf_exempt
 def user_logout(request):
     access_token = False
     refresh_token = False
@@ -236,6 +238,7 @@ def user_logout(request):
 
 @api_view(['PUT'])
 @check_blacklisted_token
+@csrf_exempt
 def refresh_token_view(request):
     UserModel = get_user_model()
     refresh_token = request.headers.get('refreshtoken')
@@ -285,6 +288,7 @@ def refresh_token_view(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
+@csrf_exempt
 def user_delete(request):
     if request.user.account_type == User.AccountType.DRIVER:
         driver = Driver.objects.filter(id=request.user.id).first()
@@ -302,6 +306,7 @@ def user_delete(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
+@csrf_exempt
 def user_update(request):
     jsn: dict
     user_fields = ['email', 'name', 'username', 'phone', 'address', 'dob', 'gender', 'about']
@@ -362,6 +367,7 @@ def user_update(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
+@csrf_exempt
 def user_update_password(request):
     jsn: dict
     try:
