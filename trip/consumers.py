@@ -23,8 +23,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
         if not self.scope['user'].is_authenticated:
             print("[+] not authenticated")
             await self.accept()
-            await self.channel_layer.group_send(
-                self.live_session_group_name,
+            await self.channel_layer.send(
+                self.channel_name,
                 {
                     'type': 'send_connection_message',
                     'auth': False
@@ -51,7 +51,10 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 connection=False
             )
             await self.send(text_data=json.dumps(mockDriverConnectEventResult.to_json()))
-            await asyncio.sleep(1)
+            await self.channel_layer.group_discard(
+                self.live_session_group_name,
+                self.channel_name
+            )
             await self.close()
             return
         joined = event['joined']
@@ -192,12 +195,6 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                         'new_sleep': mockDriverChangeSpeedEvent.request.new_sleep,
                     }
                 )
-            # await self.channel_layer.group_send(
-            #     self.live_session_group_name,
-        # if 'location' in text_data_json:
-        #     location = text_data_json['location']
-            # await self.channel_layer.group_send(
-            #     self.live_session_group_name,
 
     async def change_speed(self, event):
         self.mps_speed = event['new_speed']
