@@ -25,10 +25,14 @@ def confirm_user_for_live_session(scope):
             if ride is None:
                 return AnonymousUser(), None
             ride_loc = {
-                'from_lat': ride.start_destination_lat,
-                'from_lon': ride.start_destination_lon,
-                'to_lat': ride.end_destination_lat,
-                'to_lon': ride.end_destination_lon,
+                'id': ride.id,
+                'loc': {
+                    'from_lat': ride.start_destination_lat,
+                    'from_lon': ride.start_destination_lon,
+                    'to_lat': ride.end_destination_lat,
+                    'to_lon': ride.end_destination_lon,
+                },
+                'state': ride.state
             }
             if user.account_type == User.AccountType.REGULAR:
                 print(4)
@@ -61,5 +65,5 @@ class TokenAuthMiddleware:
     async def __call__(self, scope, receive, send):
         print(scope)
         self.scope = scope
-        self.scope['user'], self.scope['ride_loc'] = await confirm_user_for_live_session(self.scope)
+        self.scope['user'], self.scope['ride'] = await confirm_user_for_live_session(self.scope)
         return await self.app(scope, receive, send)
