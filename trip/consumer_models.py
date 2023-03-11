@@ -9,6 +9,7 @@ class Events(Enum):
     BroadcastDriverLiveLocationEvent = "BroadcastDriverLiveLocationEvent"
     # Response Events
     MockDriverConnectEventResult = "MockDriverConnectEventResult"
+    IdleDriverConnectEventResult = "IdleDriverConnectEventResult"
     MockDriverIncomingInitiateEventResult = "MockDriverIncomingInitiateEventResult"
     MockDriverIncomingInProgressEventResult = "MockDriverIncomingInProgressEventResult"
     MockDriverReadyToPickupEventResult = "MockDriverReadyToPickupEventResult"
@@ -17,24 +18,26 @@ class Events(Enum):
 
 class MockDriverConnectEventResultResponse:
 
-    def __init__(self, message: str, route: dict, state, connection: bool = True):
+    def __init__(self, message: str, route: dict, state, connection: bool = True, error=None):
         self.message: str = message
         self.route: dict = route
         self.state = state
         self.connection = connection
+        self.error = error
 
     def to_json(self):
         return {
             "message": self.message,
             "route": self.route,
             "state": self.state,
-            "connection": self.connection
+            "connection": self.connection,
+            "error": self.error
         }
 
 
 class MockDriverConnectEventResult:
-    def __init__(self, message: str, route: dict, state, connection: bool = True):
-        self.response = MockDriverConnectEventResultResponse(message, route, state, connection)
+    def __init__(self, message: str, route: dict, state, connection: bool = True, error=None):
+        self.response = MockDriverConnectEventResultResponse(message, route, state, connection, error)
         self.event = Events.MockDriverConnectEventResult.value
 
     def to_json(self):
@@ -220,5 +223,32 @@ class BroadcastDriverLiveLocationEvent:
     def to_json(self):
         return {
             "request": self.request.to_json(),
+            "event": self.event
+        }
+
+
+class IdleDriverConnectEventResultResponse:
+
+    def __init__(self, message: str, connection: bool = True, error=None):
+        self.message: str = message
+        self.connection = connection
+        self.error = error
+
+    def to_json(self):
+        return {
+            "message": self.message,
+            "connection": self.connection,
+            "error": self.error
+        }
+
+
+class IdleDriverConnectEventResult:
+    def __init__(self, message: str, connection: bool = True, error=None):
+        self.response = IdleDriverConnectEventResultResponse(message, connection, error)
+        self.event = Events.IdleDriverConnectEventResult.value
+
+    def to_json(self):
+        return {
+            "response": self.response.to_json(),
             "event": self.event
         }
