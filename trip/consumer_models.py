@@ -45,7 +45,7 @@ class MockDriverConnectEventResult:
 
 
 class MockDriverIncomingInitiateEventResultResponse:
-    def __init__(self, driver_loc: list, customer_loc: list, total_cords: int, route: dict, state: Ride.State):
+    def __init__(self, driver_loc: dict, customer_loc: dict, total_cords: int, route: list, state: Ride.State):
         self.driver_loc = driver_loc
         self.customer_loc = customer_loc
         self.total_cords = total_cords
@@ -64,7 +64,7 @@ class MockDriverIncomingInitiateEventResultResponse:
 
 class MockDriverIncomingInitiateEventResult:
 
-    def __init__(self, driver_loc: list, customer_loc, total_cords: int, route: dict, state: Ride.State):
+    def __init__(self, driver_loc: dict, customer_loc: dict, total_cords: int, route: list, state: Ride.State):
         self.response = MockDriverIncomingInitiateEventResultResponse(driver_loc, customer_loc, total_cords, route, state)
         self.event = Events.MockDriverIncomingInitiateEventResult.value
 
@@ -76,7 +76,7 @@ class MockDriverIncomingInitiateEventResult:
 
 
 class MockDriverIncomingInProgressEventResultResponse:
-    def __init__(self, driver_loc: list, state):
+    def __init__(self, driver_loc: dict, state):
         self.driver_loc = driver_loc
         self.state = state
 
@@ -89,7 +89,7 @@ class MockDriverIncomingInProgressEventResultResponse:
 
 class MockDriverIncomingInProgressEventResult:
 
-    def __init__(self, driver_loc: list, state=Ride.State.DRIVER_INCOMING):
+    def __init__(self, driver_loc: dict, state=Ride.State.DRIVER_INCOMING):
         self.response = MockDriverIncomingInProgressEventResultResponse(driver_loc, state)
         self.event = Events.MockDriverIncomingInProgressEventResult.value
 
@@ -101,7 +101,7 @@ class MockDriverIncomingInProgressEventResult:
 
 
 class MockDriverReadyToPickupEventResultResponse:
-    def __init__(self, driver_loc: list, state: Ride.State):
+    def __init__(self, driver_loc: dict, state: Ride.State):
         self.driver_loc = driver_loc
         self.state = state
 
@@ -114,7 +114,7 @@ class MockDriverReadyToPickupEventResultResponse:
 
 class MockDriverReadyToPickupEventResult:
 
-    def __init__(self, driver_loc: list, state: Ride.State = Ride.State.PICKUP_READY):
+    def __init__(self, driver_loc: dict, state: Ride.State = Ride.State.PICKUP_READY):
         self.response = MockDriverReadyToPickupEventResultResponse(driver_loc, state)
         self.event = Events.MockDriverReadyToPickupEventResult.value
 

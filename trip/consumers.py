@@ -65,9 +65,11 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
         }
         response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers, params=querystring).json()
+        route = response['route']
+        route['geometry']['coordinates'] = [{'lat': coordinate[0], 'lng': coordinate[1]} for coordinate in response['route']['geometry']['coordinates']]
         mockDriverConnectEventResult = MockDriverConnectEventResult(
             message=f'user:{self.scope["user"].name} {"just joined" if joined else "left"} live location preview for ride({self.scope["ride"]["id"]})',
-            route=response['route'] if joined and response else {},
+            route=route if joined and response else {},
             state=self.scope["ride"]["state"]
         )
         await self.send(text_data=json.dumps(mockDriverConnectEventResult.to_json()))
@@ -98,6 +100,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             for index in range(0, len(self.var_coordinates) - 1):
                 self.distances_between_all_geometry_pairs.append(
                     geopy.distance.distance((self.var_coordinates[index]), (self.var_coordinates[index + 1])))
+            self.var_coordinates = [{'lat': coordinate[0], 'lng': coordinate[1]} for coordinate in self.var_coordinates]
             print(f'distances_list length: {len(self.distances_between_all_geometry_pairs)}')
             print(self.distances_between_all_geometry_pairs)
             print(f'len_cords: {len(self.var_coordinates)}')
@@ -106,7 +109,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             self.current_sent_distance = 0
             mockDriverIncomingInitiateEventResult = MockDriverIncomingInitiateEventResult(
                 driver_loc=self.var_coordinates[0],
-                customer_loc=f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lon']}",
+                customer_loc={'lat': self.scope['ride']['loc']['from_lat'], 'lng': self.scope['ride']['loc']['from_lon']},
                 total_cords=len(self.var_coordinates),
                 route=self.var_coordinates,
                 state=self.scope['ride']['state']
