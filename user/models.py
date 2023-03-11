@@ -101,6 +101,7 @@ class Ride(models.Model):
         PICKUP_READY = 'p', 'pickup ready'
         ONGOING = 'o', 'ongoing'
         FINISHED = 'f', 'finished'
+        CANCELLED = 'c', 'cancelled'
 
     user = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='user_user')
     driver = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='driver_user')
