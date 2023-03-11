@@ -1,10 +1,16 @@
+import copy
+
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import permission_classes, api_view
+
+from uberClone.settings import idle_drivers
 from user.models import Vehicle, User
 from user.decorators import check_blacklisted_token
 from user.serializers import VehicleSerializer
+import pandas as pd
+import geopandas as gpd
 
 
 @api_view(['POST'])
@@ -169,3 +175,54 @@ def delete_vehicle(request):
                 'message': 'this feature is only for driver user'
             }
         )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@check_blacklisted_token
+def search_nearby_drivers(request):
+    jsn = request.data
+    if not ('lat' in jsn and 'lng' in jsn and 'vehicle_type' in jsn):
+        return Response(
+            {
+                'status': False,
+                'message': 'missing some parameters in request (required data: lat, lng, vehicle_type)'
+            }
+        )
+    cust_cords = [
+        {'lat': jsn['lat'], 'lng': jsn['lng']}
+    ]
+    driver_cords = [v for v in idle_drivers.values()]
+    print(idle_drivers)
+    print(driver_cords)
+    if len(idle_drivers) == 0:
+        return Response(
+            {
+                'status': False,
+                'drivers': [],
+                'message': 'currently, no drivers are idle'
+            }
+        )
+    driver_df = pd.DataFrame(driver_cords)
+    cust_df = pd.DataFrame(cust_cords)
+
+    driver_df = driver_df[driver_df['vehicle_type'] == jsn['vehicle_type']]
+
+    driver_gdf = gpd.GeoDataFrame(driver_df, geometry=gpd.points_from_xy(driver_df['lat'], driver_df['lng']), crs="EPSG:4326")
+    cust_gdf = gpd.GeoDataFrame(cust_df, geometry=gpd.points_from_xy(cust_df['lat'], cust_df['lng']), crs="EPSG:4326")
+
+    driver_gdf_proj = driver_gdf.to_crs("EPSG:3857")
+    cust_gdf_proj = cust_gdf.to_crs("EPSG:3857")
+
+    x = cust_gdf_proj.buffer((3845.885 * 999.99) / 1000).unary_union
+    neighbours1 = driver_gdf_proj['geometry'].intersection(x)
+
+    nearby_drivers = driver_gdf_proj[~neighbours1.is_empty]
+    nearby_drivers.drop('geometry', axis=1, inplace=True)
+    return Response(
+        {
+            'status': True,
+            'drivers': nearby_drivers.to_dict('records')
+        }
+    )
+
