@@ -10,7 +10,7 @@ REFRESH_SECRET_KEY = '0z-yx764r0qk+b3zp#erzeka7@32q9bzv^7h&c8d%+@3^o@de@'
 DEBUG = True
 
 blackListedTokens = set()
-connected_users = {}
+idle_drivers = {}
 
 ALLOWED_HOSTS = [
     '127.0.0.1',

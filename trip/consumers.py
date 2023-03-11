@@ -8,8 +8,10 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from trip.consumer_models import MockDriverConnectEventResult, MockDriverIncomingInitiateEventResult, \
     MockDriverReadyToPickupEventResult, MockDriverIncomingInProgressEventResult, MockDriverIncomingInitiateEvent, \
-    MockDriverChangeSpeedEvent, Events, BroadcastDriverLiveLocationEvent, BroadcastDriverLiveLocationEventResult
-from user.models import Ride
+    MockDriverChangeSpeedEvent, Events, BroadcastDriverLiveLocationEvent, BroadcastDriverLiveLocationEventResult, \
+    IdleDriverConnectEventResult
+from uberClone.settings import idle_drivers
+from user.models import Ride, Vehicle
 
 
 class LiveLocationConsumer(AsyncWebsocketConsumer):
@@ -218,3 +220,96 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
         else:
             mockDriverIncomingInProgressEventResult = MockDriverIncomingInProgressEventResult(event['driver_loc'])
             await self.send(text_data=json.dumps(mockDriverIncomingInProgressEventResult.to_json()))
+
+
+class IdleDriverConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        print(self.scope['url_route'])
+        self.live_session = self.scope['path'].replace('/', '_')
+        self.live_session_group_name = 'channel_%s' % self.live_session
+        await self.channel_layer.group_add(
+            self.live_session_group_name,
+            self.channel_name
+        )
+        if not self.scope['user'].is_authenticated:
+            print("[+] not authenticated")
+            await self.accept()
+            await self.channel_layer.send(
+                self.channel_name,
+                {
+                    'type': 'send_connection_message',
+                    'auth': False
+                }
+            )
+        else:
+            self.mps_speed = 3
+            self.mps_sleep = 0.5
+            await self.accept()
+            await self.channel_layer.group_send(
+                self.live_session_group_name,
+                {
+                    'type': 'send_connection_message',
+                    'joined': True
+                }
+            )
+
+    async def send_connection_message(self, event):
+        if 'auth' in event:
+            idleDriverConnectEventResult = IdleDriverConnectEventResult(
+                message="user is not authenticated",
+                connection=False,
+                error=self.scope['error']
+            )
+            await self.send(text_data=json.dumps(idleDriverConnectEventResult.to_json()))
+            await self.channel_layer.group_discard(
+                self.live_session_group_name,
+                self.channel_name
+            )
+            await self.close()
+            return
+        joined = event['joined']
+        idleDriverConnectEventResult = IdleDriverConnectEventResult(
+            message=f'driver:{self.scope["user"].name} {"just added to" if joined else "removed from"} idle_driver',
+            error=self.scope['error']
+        )
+        await self.send(text_data=json.dumps(idleDriverConnectEventResult.to_json()))
+
+    async def disconnect(self, code):
+        if self.scope['user'].is_authenticated:
+            del idle_drivers[f'{self.scope["user"].id}']
+            await self.channel_layer.group_send(
+                self.live_session_group_name,
+                {
+                    'type': 'send_connection_message',
+                    'joined': False
+                }
+            )
+            await self.channel_layer.group_discard(
+                self.live_session_group_name,
+                self.channel_name
+            )
+
+    async def receive(self, text_data=None, bytes_data=None):
+        text_data_json = json.loads(text_data)
+        print('[+] received json')
+        print(text_data_json)
+        if 'event' in text_data_json:
+            if text_data_json['event'] == Events.BroadcastDriverLiveLocationEvent.value:
+                broadcastDriverLiveLocationEvent = BroadcastDriverLiveLocationEvent(**text_data_json)
+                await self.channel_layer.group_send(
+                    self.live_session_group_name,
+                    {
+                        'type': 'liveshare_location',
+                        'location': broadcastDriverLiveLocationEvent.request.location,
+                    }
+                )
+
+    async def liveshare_location(self, event):
+        loc = event['location']
+        loc.update({'user_id': self.scope['user'].id})
+        loc.update({'vehicle_type': self.scope['vehicle']['type'] if self.scope['vehicle'] else Vehicle.Type.CAR_SEDAN})
+        loc.update({'vehicle_number': self.scope['vehicle']['number'] if self.scope['vehicle'] else None})
+        loc.update({'seat_capacity': self.scope['vehicle']['seat_capacity'] if self.scope['vehicle'] else None})
+        idle_drivers[f'{self.scope["user"].id}'] = loc
+        broadcastDriverLiveLocationEventResult = BroadcastDriverLiveLocationEventResult(event['location'])
+        await self.send(text_data=json.dumps(broadcastDriverLiveLocationEventResult.to_json()))
