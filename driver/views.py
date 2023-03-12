@@ -177,7 +177,7 @@ def delete_vehicle(request):
         )
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def search_nearby_drivers(request):

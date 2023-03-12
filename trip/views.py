@@ -22,7 +22,7 @@ def get_trip_locations(request):
     )
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def get_location_path(request):
