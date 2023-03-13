@@ -25,12 +25,11 @@ def book_ride(request):
             }
         )
     jsn = request.body
-    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and
-            'vehicle_type' in jsn and 'driver' in jsn):
+    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'driver' in jsn):
         return Response(
             {
                 'status': False,
-                'message': 'missing some fields in the request body (required data: from_lat, from_lng, to_lat, to_lng, vehicle_type)'
+                'message': 'missing some fields in the request body (required data: from_lat, from_lng, to_lat, to_lng)'
             }
         )
     driver_user = User.objects.filter(id=jsn['driver']).first()
