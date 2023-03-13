@@ -214,7 +214,7 @@ def search_nearby_drivers(request):
     driver_gdf_proj = driver_gdf.to_crs("EPSG:3857")
     cust_gdf_proj = cust_gdf.to_crs("EPSG:3857")
 
-    x = cust_gdf_proj.buffer((3845.885 * 999.99) / 1000).unary_union
+    x = cust_gdf_proj.buffer(3845.885 * 3).unary_union
     neighbours1 = driver_gdf_proj['geometry'].intersection(x)
 
     nearby_drivers = driver_gdf_proj[~neighbours1.is_empty]
