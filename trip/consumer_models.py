@@ -130,12 +130,14 @@ class MockDriverReadyToPickupEventResult:
 
 class MockDriverIncomingInitiateEventRequest:
 
-    def __init__(self, mock_driver: bool):
+    def __init__(self, mock_driver: bool, location: dict = None):
         self.mock_driver = mock_driver
+        self.location = location
 
     def to_json(self):
         return {
-            "mock_driver": self.mock_driver
+            "mock_driver": self.mock_driver,
+            "location": self.location
         }
 
 

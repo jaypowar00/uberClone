@@ -61,7 +61,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             return
         joined = event['joined']
         # ride_id = self.scope['path'].split('/')[-2]
-        querystring = {"origin": f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lon']}", "destination": f"{self.scope['ride']['loc']['to_lat']},{self.scope['ride']['loc']['to_lon']}"}
+        querystring = {"origin": f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lng']}", "destination": f"{self.scope['ride']['loc']['to_lat']},{self.scope['ride']['loc']['to_lng']}"}
         headers = {
             "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
             "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
@@ -81,11 +81,11 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
         max_radius = 500.0
         # max_radius = math.sqrt(((random.uniform(2, 5)*1000)*2)/2.0)
         offset = 10 ** (math.log10(max_radius/1.11)-5)
-        from_mock_lat = self.scope['ride']['loc']['from_lat'] + random.sample([1, -1], 1)[0] * offset
-        from_mock_lon = self.scope['ride']['loc']['from_lon'] + random.sample([1, -1], 1)[0] * offset
+        from_mock_lat = event['location']['lat'] if 'location' in event else self.scope['ride']['loc']['from_lat'] + random.sample([1, -1], 1)[0] * offset
+        from_mock_lon = event['location']['lng'] if 'location' in event else self.scope['ride']['loc']['from_lng'] + random.sample([1, -1], 1)[0] * offset
         querystring = {
             "origin": f"{from_mock_lat},{from_mock_lon}",
-            "destination": f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lon']}"
+            "destination": f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lng']}"
         }
         headers = {
             "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
@@ -111,7 +111,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             self.current_sent_distance = 0
             mockDriverIncomingInitiateEventResult = MockDriverIncomingInitiateEventResult(
                 driver_loc=self.var_coordinates[0],
-                customer_loc={'lat': self.scope['ride']['loc']['from_lat'], 'lng': self.scope['ride']['loc']['from_lon']},
+                customer_loc={'lat': self.scope['ride']['loc']['from_lat'], 'lng': self.scope['ride']['loc']['from_lng']},
                 total_cords=len(self.var_coordinates),
                 route=self.var_coordinates,
                 state=self.scope['ride']['state']
@@ -178,7 +178,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.group_send(
                     self.live_session_group_name,
                     {
-                        'type': 'mock_driver_motion'
+                        'type': 'mock_driver_motion',
+                        'location': mockDriverIncomingInitiateEvent.request.location
                     }
                 )
             elif text_data_json['event'] == Events.BroadcastDriverLiveLocationEvent.value:
