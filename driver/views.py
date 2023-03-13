@@ -1,10 +1,7 @@
-import copy
-
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import permission_classes, api_view
-
 from uberClone.settings import idle_drivers
 from user.models import Vehicle, User
 from user.decorators import check_blacklisted_token
@@ -180,6 +177,7 @@ def delete_vehicle(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
+@csrf_exempt
 def search_nearby_drivers(request):
     jsn = request.data
     if not ('lat' in jsn and 'lng' in jsn and 'vehicle_type' in jsn):
