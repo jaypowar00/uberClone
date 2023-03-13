@@ -209,18 +209,6 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
         broadcastDriverLiveLocationEventResult = BroadcastDriverLiveLocationEventResult(event['location'])
         await self.send(text_data=json.dumps(broadcastDriverLiveLocationEventResult.to_json()))
 
-    async def websocket_text(self, event):
-        if 'state' in event:
-            if 'total_cords' in event:
-                mockDriverIncomingEventResult = MockDriverIncomingInitiateEventResult(event['driver_loc'], event['customer_loc'], event['total_cords'], event['route'], event['state'])
-                await self.send(text_data=json.dumps(mockDriverIncomingEventResult.to_json()))
-            else:
-                mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(event['driver_loc'], event['state'])
-                await self.send(text_data=json.dumps(mockDriverReadyToPickupEventResult.to_json()))
-        else:
-            mockDriverIncomingInProgressEventResult = MockDriverIncomingInProgressEventResult(event['driver_loc'])
-            await self.send(text_data=json.dumps(mockDriverIncomingInProgressEventResult.to_json()))
-
 
 class IdleDriverConsumer(AsyncWebsocketConsumer):
     async def connect(self):
