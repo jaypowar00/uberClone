@@ -1,3 +1,4 @@
+import geopy.distance
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes, api_view
@@ -8,6 +9,7 @@ from user.decorators import check_blacklisted_token
 from user.serializers import VehicleSerializer
 import pandas as pd
 import geopandas as gpd
+import numpy as np
 
 
 @api_view(['POST'])
@@ -178,7 +180,6 @@ def delete_vehicle(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
-@csrf_exempt
 def search_nearby_drivers(request):
     jsn = request.data
     if not ('lat' in jsn and 'lng' in jsn and 'vehicle_type' in jsn):
@@ -218,10 +219,14 @@ def search_nearby_drivers(request):
 
     nearby_drivers = driver_gdf_proj[~neighbours1.is_empty]
     nearby_drivers.drop('geometry', axis=1, inplace=True)
+    distances = [geopy.distance.distance([jsn['lat'], jsn['lng']], [point['lat'], point['lng']]).meters for point in nearby_drivers.to_dict('records')]
+    distances = {k: v for k, v in enumerate(distances)}
+    distances = dict(sorted(distances.items(), key=lambda item: item[1]))
     return Response(
         {
             'status': True,
-            'drivers': nearby_drivers.to_dict('records')
+            'drivers': nearby_drivers.to_dict('records'),
+            'nearest_driver': nearby_drivers.to_dict('records')[list(distances.keys())[0]]
         }
     )
 

@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'user',
     'trip',
     'driver',
+    'ride',
     'corsheaders',
     'rest_framework',
     'django.contrib.admin',

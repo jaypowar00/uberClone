@@ -23,15 +23,16 @@ class VehicleSerializer(serializers.ModelSerializer):
             else 'BIKE'
         return type_str
 
+
 class TripLocationsSerializer(serializers.ModelSerializer):
     geo = serializers.SerializerMethodField('get_geo_details')
 
     class Meta:
         model = TripLocations
-        fields = ['id', 'name', 'address', 'thumbnail', 'lon', 'lat', 'description', 'geo']
+        fields = ['id', 'name', 'address', 'thumbnail', 'lng', 'lat', 'description', 'geo']
 
     def get_geo_details(self, trip_location_obj):
-        geo = geocoder.osm([trip_location_obj.lat, trip_location_obj.lon], method='reverse')
+        geo = geocoder.osm([trip_location_obj.lat, trip_location_obj.lng], method='reverse')
         return {
             'country': geo.country,
             'city': geo.city,

@@ -76,9 +76,10 @@ def user_register(request):
         user.set_password(jsn['password'])
         user.save()
         if jsn['account_type'] == User.AccountType.DRIVER:
-            driver = Driver(driver_license=jsn['license'] if 'license' in jsn else None)
+            driver = Driver(user.id, driver_license=jsn['license'] if 'license' in jsn else None)
             driver.save()
     except IntegrityError as err:
+        print(err)
         print(str(err).split('\n')[1].split('(')[1].split(')')[0])
         dup = str(err).split('\n')[1].split('(')[1].split(')')[0]
         return Response(

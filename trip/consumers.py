@@ -214,8 +214,9 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
 class IdleDriverConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         print(self.scope['url_route'])
-        self.live_session = self.scope['path'].replace('/', '_')
-        self.live_session_group_name = 'channel_%s' % self.live_session
+        # self.live_session = self.scope['path'].replace('/', '_')
+        # self.live_session_group_name = 'channel_%s' % self.live_session
+        self.live_session_group_name = 'channel_idle_driver'
         await self.channel_layer.group_add(
             self.live_session_group_name,
             self.channel_name
@@ -231,11 +232,9 @@ class IdleDriverConsumer(AsyncWebsocketConsumer):
                 }
             )
         else:
-            self.mps_speed = 3
-            self.mps_sleep = 0.5
             await self.accept()
-            await self.channel_layer.group_send(
-                self.live_session_group_name,
+            await self.channel_layer.send(
+                self.channel_name,
                 {
                     'type': 'send_connection_message',
                     'joined': True
@@ -280,13 +279,13 @@ class IdleDriverConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
-        print('[+] received json')
+        print(f'[+] received json user{self.scope["user"].id}')
         print(text_data_json)
         if 'event' in text_data_json:
             if text_data_json['event'] == Events.BroadcastDriverLiveLocationEvent.value:
                 broadcastDriverLiveLocationEvent = BroadcastDriverLiveLocationEvent(**text_data_json)
-                await self.channel_layer.group_send(
-                    self.live_session_group_name,
+                await self.channel_layer.send(
+                    self.channel_name,
                     {
                         'type': 'liveshare_location',
                         'location': broadcastDriverLiveLocationEvent.request.location,
