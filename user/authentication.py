@@ -8,7 +8,7 @@ from rest_framework.authentication import BaseAuthentication
 
 class CSRFCheck(CsrfViewMiddleware):
     def _reject(self, request, reason):
-        if reason in ["Referer checking failed - no Referer.", "CSRF token missing or incorrect."]:
+        if reason in ["Referer checking failed - no Referer.", "CSRF token missing or incorrect.", "CSRF token missing.", "CSRF cookie not set."]:
             return None
         return reason if reason else None
 

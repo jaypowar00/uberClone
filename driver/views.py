@@ -1,7 +1,7 @@
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes, api_view
+from django.views.decorators.csrf import csrf_exempt
 from uberClone.settings import idle_drivers
 from user.models import Vehicle, User
 from user.decorators import check_blacklisted_token
@@ -13,6 +13,7 @@ import geopandas as gpd
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
+@csrf_exempt
 def add_vehicle(request):
     try:
         driver = request.user.driver
