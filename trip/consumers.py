@@ -81,8 +81,12 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
         max_radius = 500.0
         # max_radius = math.sqrt(((random.uniform(2, 5)*1000)*2)/2.0)
         offset = 10 ** (math.log10(max_radius/1.11)-5)
-        from_mock_lat = event['location']['lat'] if 'location' in event else self.scope['ride']['loc']['from_lat'] + random.sample([1, -1], 1)[0] * offset
-        from_mock_lon = event['location']['lng'] if 'location' in event else self.scope['ride']['loc']['from_lng'] + random.sample([1, -1], 1)[0] * offset
+        if event['location']:
+            from_mock_lat = event['location']['lat']
+            from_mock_lon = event['location']['lng']
+        else:
+            from_mock_lat = self.scope['ride']['loc']['from_lat'] + random.sample([1, -1], 1)[0] * offset
+            from_mock_lon = self.scope['ride']['loc']['from_lng'] + random.sample([1, -1], 1)[0] * offset
         querystring = {
             "origin": f"{from_mock_lat},{from_mock_lon}",
             "destination": f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lng']}"
