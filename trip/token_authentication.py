@@ -68,9 +68,9 @@ def confirm_user_for_live_session(scope):
                 'id': ride.id,
                 'loc': {
                     'from_lat': ride.start_destination_lat,
-                    'from_lng': ride.start_destination_lon,
+                    'from_lng': ride.start_destination_lng,
                     'to_lat': ride.end_destination_lat,
-                    'to_lng': ride.end_destination_lon,
+                    'to_lng': ride.end_destination_lng,
                 },
                 'state': ride.state
             }
