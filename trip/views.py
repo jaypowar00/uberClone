@@ -64,6 +64,7 @@ def get_location_path(request):
     }
 
     response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers, params=querystring).json()
+    response['route']['geometry']['coordinates'] = [{'lat': coordinate[0], 'lng': coordinate[1]} for coordinate in response['route']['geometry']['coordinates']]
     return Response(
         {
             'status': True,
