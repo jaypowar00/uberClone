@@ -1,3 +1,5 @@
+import math
+import random
 from enum import Enum
 from user.models import Ride
 
@@ -7,13 +9,16 @@ class Events(Enum):
     MockDriverIncomingInitiateEvent = "MockDriverIncomingInitiateEvent"
     MockDriverChangeSpeedEvent = "MockDriverChangeSpeedEvent"
     BroadcastDriverLiveLocationEvent = "BroadcastDriverLiveLocationEvent"
+    MockDriverOngoingInitiateEvent = "MockDriverOngoingInitiateEvent"
+    CustomerPickedUpOtpEvent = "CustomerPickedUpOtpEvent"
     # Response Events
     MockDriverConnectEventResult = "MockDriverConnectEventResult"
     IdleDriverConnectEventResult = "IdleDriverConnectEventResult"
     MockDriverIncomingInitiateEventResult = "MockDriverIncomingInitiateEventResult"
-    MockDriverIncomingInProgressEventResult = "MockDriverIncomingInProgressEventResult"
+    MockDriverInProgressEventResult = "MockDriverInProgressEventResult"
     MockDriverReadyToPickupEventResult = "MockDriverReadyToPickupEventResult"
     BroadcastDriverLiveLocationEventResult = "BroadcastDriverLiveLocationEventResult"
+    CustomerPickedUpOtpEventResult = "CustomerPickedUpOtpEventResult"
 
 
 class MockDriverConnectEventResultResponse:
@@ -78,7 +83,7 @@ class MockDriverIncomingInitiateEventResult:
         }
 
 
-class MockDriverIncomingInProgressEventResultResponse:
+class MockDriverInProgressEventResultResponse:
     def __init__(self, driver_loc: dict, state):
         self.driver_loc = driver_loc
         self.state = state
@@ -90,11 +95,11 @@ class MockDriverIncomingInProgressEventResultResponse:
         }
 
 
-class MockDriverIncomingInProgressEventResult:
+class MockDriverInProgressEventResult:
 
     def __init__(self, driver_loc: dict, state=Ride.State.DRIVER_INCOMING):
-        self.response = MockDriverIncomingInProgressEventResultResponse(driver_loc, state)
-        self.event = Events.MockDriverIncomingInProgressEventResult.value
+        self.response = MockDriverInProgressEventResultResponse(driver_loc, state)
+        self.event = Events.MockDriverInProgressEventResult.value
 
     def to_json(self):
         return {
@@ -105,13 +110,16 @@ class MockDriverIncomingInProgressEventResult:
 
 class MockDriverReadyToPickupEventResultResponse:
     def __init__(self, driver_loc: dict, state: Ride.State):
+        digits = "0123456789"
         self.driver_loc = driver_loc
         self.state = state
+        self.otp = ''.join([digits[math.floor(random.random() * 10)] for _ in range(4)])
 
     def to_json(self):
         return {
             "driver_loc": self.driver_loc,
-            "state": self.state
+            "state": self.state,
+            "otp": self.otp
         }
 
 
@@ -155,6 +163,33 @@ class MockDriverIncomingInitiateEvent:
         }
 
 
+class MockDriverOngoingInitiateEventRequest:
+
+    def __init__(self, mock_driver: bool, location: dict = None):
+        self.mock_driver = mock_driver
+        self.location = location
+
+    def to_json(self):
+        return {
+            "mock_driver": self.mock_driver,
+            "location": self.location
+        }
+
+
+class MockDriverOngoingInitiateEvent:
+
+    def __init__(self, request, event):
+        self.request = MockDriverOngoingInitiateEventRequest(**request)
+        self.event = Events.MockDriverIncomingInitiateEvent.value
+        assert self.event == event, "passed event is incorrect fot this operation"
+
+    def to_json(self):
+        return {
+            "request": self.request.to_json(),
+            "event": self.event
+        }
+
+
 class MockDriverChangeSpeedEventRequest:
 
     def __init__(self, new_speed: int = 3, new_sleep: float = 0.5):
@@ -179,6 +214,55 @@ class MockDriverChangeSpeedEvent:
         return {
             "request": self.request.to_json(),
             "event": self.event
+        }
+
+
+class CustomerPickedUpOtpEventRequest:
+
+    def __init__(self, picked_up):
+        self.picked_up = picked_up
+
+    def to_json(self):
+        return {
+            'picked_up': self.picked_up
+        }
+
+
+class CustomerPickedUpOtpEvent:
+
+    def __init__(self, request, event):
+        self.request = CustomerPickedUpOtpEventRequest(**request)
+        self.event = Events.CustomerPickedUpOtpEvent.value
+        assert self.event == event, "passed event is incorrect for this operation"
+
+    def to_json(self):
+        return {
+            'request': self.request.to_json(),
+            'event': self.event
+        }
+
+
+class CustomerPickedUpOtpEventResultResponse:
+
+    def __init__(self, otp):
+        self.otp = otp
+
+    def to_json(self):
+        return {
+            'otp': self.otp
+        }
+
+
+class CustomerPickedUpOtpEventResult:
+
+    def __init__(self, otp):
+        self.response = CustomerPickedUpOtpEventResultResponse(otp)
+        self.event = Events.CustomerPickedUpOtpEventResult.value
+
+    def to_json(self):
+        return {
+            'response': self.response.to_json(),
+            'event': self.event
         }
 
 
