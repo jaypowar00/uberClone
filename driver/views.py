@@ -2,20 +2,17 @@ import geopy.distance
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes, api_view
-from django.views.decorators.csrf import csrf_exempt
 from uberClone.settings import idle_drivers
 from user.models import Vehicle, User
 from user.decorators import check_blacklisted_token
 from user.serializers import VehicleSerializer
 import pandas as pd
 import geopandas as gpd
-import numpy as np
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
-@csrf_exempt
 def add_vehicle(request):
     try:
         driver = request.user.driver
@@ -106,7 +103,6 @@ def vehicle_details(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
-@csrf_exempt
 def update_vehicle(request):
     try:
         driver = request.user.driver
@@ -150,7 +146,6 @@ def update_vehicle(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
-@csrf_exempt
 def delete_vehicle(request):
     try:
         driver = request.user.driver
