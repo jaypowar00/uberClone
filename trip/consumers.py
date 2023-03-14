@@ -7,7 +7,7 @@ import geopy.distance
 import requests
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
-from trip.consumer_models import MockDriverConnectEventResult, MockDriverIncomingInitiateEventResult, \
+from trip.consumer_models import MockDriverConnectEventResult, MockDriverInitiateEventResult, \
     MockDriverReadyToPickupEventResult, MockDriverInProgressEventResult, MockDriverIncomingInitiateEvent, \
     MockDriverChangeSpeedEvent, Events, BroadcastDriverLiveLocationEvent, BroadcastDriverLiveLocationEventResult, \
     IdleDriverConnectEventResult, MockDriverOngoingInitiateEvent, CustomerPickedUpOtpEvent, \
@@ -128,14 +128,14 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             print(self.var_coordinates)
             self.current_distance = 0
             self.current_sent_distance = 0
-            mockDriverIncomingInitiateEventResult = MockDriverIncomingInitiateEventResult(
+            mockDriverInitiateEventResult = MockDriverInitiateEventResult(
                 driver_loc=self.var_coordinates[0],
                 customer_loc={'lat': self.scope['ride']['loc']['from_lat'], 'lng': self.scope['ride']['loc']['from_lng']},
                 total_cords=len(self.var_coordinates),
                 route=self.var_coordinates,
                 state=self.scope['ride']['state']
             )
-            await self.send(text_data=json.dumps(mockDriverIncomingInitiateEventResult.to_json()))
+            await self.send(text_data=json.dumps(mockDriverInitiateEventResult.to_json()))
             while True:
                 await asyncio.sleep(self.mps_sleep)
                 self.current_distance += self.mps * self.mps_speed

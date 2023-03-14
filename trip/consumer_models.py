@@ -14,7 +14,7 @@ class Events(Enum):
     # Response Events
     MockDriverConnectEventResult = "MockDriverConnectEventResult"
     IdleDriverConnectEventResult = "IdleDriverConnectEventResult"
-    MockDriverIncomingInitiateEventResult = "MockDriverIncomingInitiateEventResult"
+    MockDriverInitiateEventResult = "MockDriverInitiateEventResult"
     MockDriverInProgressEventResult = "MockDriverInProgressEventResult"
     MockDriverReadyToPickupEventResult = "MockDriverReadyToPickupEventResult"
     BroadcastDriverLiveLocationEventResult = "BroadcastDriverLiveLocationEventResult"
@@ -52,7 +52,7 @@ class MockDriverConnectEventResult:
         }
 
 
-class MockDriverIncomingInitiateEventResultResponse:
+class MockDriverInitiateEventResultResponse:
     def __init__(self, driver_loc: dict, customer_loc: dict, total_cords: int, route: list, state: Ride.State):
         self.driver_loc = driver_loc
         self.customer_loc = customer_loc
@@ -70,11 +70,11 @@ class MockDriverIncomingInitiateEventResultResponse:
         }
 
 
-class MockDriverIncomingInitiateEventResult:
+class MockDriverInitiateEventResult:
 
     def __init__(self, driver_loc: dict, customer_loc: dict, total_cords: int, route: list, state: Ride.State):
-        self.response = MockDriverIncomingInitiateEventResultResponse(driver_loc, customer_loc, total_cords, route, state)
-        self.event = Events.MockDriverIncomingInitiateEventResult.value
+        self.response = MockDriverInitiateEventResultResponse(driver_loc, customer_loc, total_cords, route, state)
+        self.event = Events.MockDriverInitiateEventResult.value
 
     def to_json(self):
         return {
