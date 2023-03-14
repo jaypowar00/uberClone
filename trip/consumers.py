@@ -2,15 +2,17 @@ import asyncio
 import math
 import os
 import random
+from datetime import timedelta, datetime
 import geopy.distance
 import requests
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from trip.consumer_models import MockDriverConnectEventResult, MockDriverIncomingInitiateEventResult, \
-    MockDriverReadyToPickupEventResult, MockDriverIncomingInProgressEventResult, MockDriverIncomingInitiateEvent, \
+    MockDriverReadyToPickupEventResult, MockDriverInProgressEventResult, MockDriverIncomingInitiateEvent, \
     MockDriverChangeSpeedEvent, Events, BroadcastDriverLiveLocationEvent, BroadcastDriverLiveLocationEventResult, \
-    IdleDriverConnectEventResult
-from uberClone.settings import idle_drivers
+    IdleDriverConnectEventResult, MockDriverOngoingInitiateEvent, CustomerPickedUpOtpEvent, \
+    CustomerPickedUpOtpEventResult
+from uberClone.settings import idle_drivers, ride_otps
 from user.models import Ride, Vehicle
 
 
@@ -40,7 +42,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 self.live_session_group_name,
                 {
                     'type': 'send_connection_message',
-                    'joined': True
+                    'joined': True,
+                    'name': self.scope['user'].name
                 }
             )
 
@@ -70,7 +73,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
         route = response['route']
         route['geometry']['coordinates'] = [{'lat': coordinate[0], 'lng': coordinate[1]} for coordinate in response['route']['geometry']['coordinates']]
         mockDriverConnectEventResult = MockDriverConnectEventResult(
-            message=f'user:{self.scope["user"].name} {"just joined" if joined else "left"} live location preview for ride({self.scope["ride"]["id"]})',
+            message=f'user:{event["name"]} {"just joined" if joined else "left"} live location preview for ride({self.scope["ride"]["id"]})',
             route=route if joined and response else {},
             state=self.scope["ride"]["state"]
         )
@@ -78,19 +81,31 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
 
     async def mock_driver_motion(self, event):
         print('[+] inside mock_driver_motion')
-        max_radius = 500.0
         # max_radius = math.sqrt(((random.uniform(2, 5)*1000)*2)/2.0)
-        offset = 10 ** (math.log10(max_radius/1.11)-5)
-        if event['location']:
-            from_mock_lat = event['location']['lat']
-            from_mock_lon = event['location']['lng']
+        if event['event'] == Events.MockDriverIncomingInitiateEvent.value:
+            max_radius = 500.0
+            offset = 10 ** (math.log10(max_radius/1.11)-5)
+            if event['location']:
+                from_mock_lat = event['location']['lat']
+                from_mock_lon = event['location']['lng']
+            else:
+                from_mock_lat = self.scope['ride']['loc']['from_lat'] + random.sample([1, -1], 1)[0] * offset
+                from_mock_lon = self.scope['ride']['loc']['from_lng'] + random.sample([1, -1], 1)[0] * offset
+            querystring = {
+                "origin": f"{from_mock_lat},{from_mock_lon}",
+                "destination": f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lng']}"
+            }
         else:
-            from_mock_lat = self.scope['ride']['loc']['from_lat'] + random.sample([1, -1], 1)[0] * offset
-            from_mock_lon = self.scope['ride']['loc']['from_lng'] + random.sample([1, -1], 1)[0] * offset
-        querystring = {
-            "origin": f"{from_mock_lat},{from_mock_lon}",
-            "destination": f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lng']}"
-        }
+            if event['location']:
+                from_mock_lat = event['location']['lat']
+                from_mock_lon = event['location']['lng']
+            else:
+                from_mock_lat = self.scope['ride']['loc']['from_lat']
+                from_mock_lon = self.scope['ride']['loc']['from_lng']
+            querystring = {
+                "origin": f"{from_mock_lat},{from_mock_lon}",
+                "destination": f"{self.scope['ride']['loc']['to_lat']},{self.scope['ride']['loc']['to_lng']}"
+            }
         headers = {
             "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
             "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
@@ -136,8 +151,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                         break
                     else:
                         print(f'[+] 1 =================== \n [+] self.current_index {self.current_index}')
-                        mockDriverIncomingInProgressEventResult = MockDriverIncomingInProgressEventResult(driver_loc=self.var_coordinates[self.current_index])
-                        await self.send(text_data=json.dumps(mockDriverIncomingInProgressEventResult.to_json()))
+                        mockDriverInProgressEventResult = MockDriverInProgressEventResult(driver_loc=self.var_coordinates[self.current_index])
+                        await self.send(text_data=json.dumps(mockDriverInProgressEventResult.to_json()))
                     print(f"{f'index: {self.current_index}' : <8} | {f'distance_pop: {self.distances_between_all_geometry_pairs[self.current_index-1].meters}': <33} | {f'distance_sent: {self.current_sent_distance}': <33} | {f'distance_travelled: {self.current_distance}': <33}")
                     self.current_index += 1
                 else:
@@ -152,8 +167,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                         break
                     else:
                         print(f'[+] 3 =================== \n [+] self.current_index {self.current_index}')
-                        mockDriverIncomingInProgressEventResult = MockDriverIncomingInProgressEventResult(driver_loc=self.var_coordinates[self.current_index])
-                        await self.send(text_data=json.dumps(mockDriverIncomingInProgressEventResult.to_json()))
+                        mockDriverInProgressEventResult = MockDriverInProgressEventResult(driver_loc=self.var_coordinates[self.current_index])
+                        await self.send(text_data=json.dumps(mockDriverInProgressEventResult.to_json()))
 
     async def disconnect(self, code):
         if self.scope['user'].is_authenticated:
@@ -169,6 +184,11 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 self.channel_name
             )
 
+    async def customer_picked_up(self, event):
+        otp = event['otp']
+        customerPickedUpOtpEventResult = CustomerPickedUpOtpEventResult(otp)
+        await self.send(text_data=json.dumps(customerPickedUpOtpEventResult.to_json()))
+
     async def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
         print('[+] received json')
@@ -183,7 +203,20 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                     self.live_session_group_name,
                     {
                         'type': 'mock_driver_motion',
-                        'location': mockDriverIncomingInitiateEvent.request.location
+                        'location': mockDriverIncomingInitiateEvent.request.location,
+                        'event': mockDriverIncomingInitiateEvent.event
+                    }
+                )
+            elif text_data_json['event'] == Events.MockDriverOngoingInitiateEvent.value:
+                mockDriverOngoingInitiateEvent = MockDriverOngoingInitiateEvent(**text_data_json)
+                print('[+] mockDriverOngoingInitiateEvent')
+                print(mockDriverOngoingInitiateEvent.to_json())
+                await self.channel_layer.group_send(
+                    self.live_session_group_name,
+                    {
+                        'type': 'mock_driver_motion',
+                        'location': mockDriverOngoingInitiateEvent.request.location,
+                        'event': mockDriverOngoingInitiateEvent.event
                     }
                 )
             elif text_data_json['event'] == Events.BroadcastDriverLiveLocationEvent.value:
@@ -195,6 +228,22 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                         'location': broadcastDriverLiveLocationEvent.request.location,
                     }
                 )
+            elif text_data_json['event'] == Events.CustomerPickedUpOtpEvent.value:
+                customerPickedUpOtpEvent = CustomerPickedUpOtpEvent(**text_data_json)
+                print('[+] customerPickedUpOtpEvent')
+                print(customerPickedUpOtpEvent.to_json())
+                digits = "0123456789"
+                otp = ''.join([digits[math.floor(random.random() * 10)] for _ in range(4)])
+                otp_expires = datetime.utcnow() + timedelta(minutes=3)
+                ride_otps[self.scope['ride']['id']] = {'otp': otp, 'expires': otp_expires}
+                await self.channel_layer.group_send(
+                    self.live_session_group_name,
+                    {
+                        'type': 'customer_picked_up',
+                        'otp': otp
+                    }
+                )
+
             elif text_data_json['event'] == Events.MockDriverChangeSpeedEvent.value:
                 mockDriverChangeSpeedEvent = MockDriverChangeSpeedEvent(**text_data_json)
                 await self.channel_layer.group_send(
