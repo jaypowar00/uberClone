@@ -111,7 +111,37 @@ def book_ride(request):
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def cancel_ride(request):
-    return None
+    if request.user.account_type == request.user.AccountType.DRIVER:
+        return Response(
+            {
+                'status': False,
+                'message': 'only customer can cancel a ride'
+            }
+        )
+    jsn = request.jsn
+    if 'ride_id' not in jsn:
+        return Response(
+            {
+                'status': False,
+                'message': 'missing ride_id in request parameter'
+            }
+        )
+    ride = Ride.objects.filter(id=jsn['ride_id'])
+    if ride is None:
+        return Response(
+            {
+                'status': False,
+                'message': 'ride for provided ride_id does not exists'
+            }
+        )
+    ride.state = Ride.State.CANCELLED
+    ride.save()
+    return Response(
+        {
+            'status': False,
+            'message': 'ride has been cancelled'
+        }
+    )
 
 
 @api_view(['POST'])
