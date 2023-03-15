@@ -267,24 +267,28 @@ def verify_otp(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
-def user_ride_history(request):
+def get_ride_history(request):
     user = request.user
-    if user.account_type == user.AccountType.DRIVER:
-        return Response(
-            {
-                'status': False,
-                'message': 'this feature is not for driver account'
-            }
-        )
-    rides = user.user_ride_history.filter(~Q(state=Ride.State.STARTED))
-    if not rides:
-        return Response(
-            {
-                'status': True,
-                'message': 'no history for previous rides',
-                'rides': []
-            }
-        )
+    if user.account_type == user.AccountType.REGULAR:
+        rides = user.user_ride_history.filter(~Q(state=Ride.State.STARTED))
+        if not rides:
+            return Response(
+                {
+                    'status': True,
+                    'message': 'no history for previous rides',
+                    'rides': []
+                }
+            )
+    else:
+        rides = user.driver_ride_history.filter(~Q(state=Ride.State.STARTED))
+        if not rides:
+            return Response(
+                {
+                    'status': True,
+                    'message': 'no history for previous rides',
+                    'rides': []
+                }
+            )
     rides_serialized = RideSerializer(rides, many=True).data
     return Response(
         {
@@ -297,86 +301,30 @@ def user_ride_history(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
-def driver_ride_history(request):
+def get_ride(request):
     user = request.user
     if user.account_type == user.AccountType.REGULAR:
-        return Response(
-            {
-                'status': False,
-                'message': 'this feature is for driver account'
-            }
-        )
-    rides = user.driver_ride_history.filter(~Q(state=Ride.State.STARTED))
-    if not rides:
-        return Response(
-            {
-                'status': True,
-                'message': 'no history for previous rides',
-                'rides': []
-            }
-        )
-    rides_ser = RideSerializer(rides, many=True).data
-    return Response(
-        {
-            'status': True,
-            'rides': rides_ser
-        }
-    )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@check_blacklisted_token
-def get_user_ride(request):
-    user = request.user
-    if user.account_type == user.AccountType.DRIVER:
-        return Response(
-            {
-                'status': False,
-                'message': 'this feature is not for driver accounts'
-            }
-        )
-    try:
-        ride = user.user_ride
-    except ObjectDoesNotExist:
-        return Response(
-            {
-                'status': True,
-                'message': 'there is no on-going ride',
-                'ride': None
-            }
-        )
-    ride_ser = RideSerializer(ride).data
-    return Response(
-        {
-            'status': True,
-            'ride': ride_ser
-        }
-    )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@check_blacklisted_token
-def get_driver_ride(request):
-    user = request.user
-    if user.account_type == user.AccountType.REGULAR:
-        return Response(
-            {
-                'status': False,
-                'message': 'this feature is for only driver accounts'
-            }
-        )
-    try:
-        ride = user.driver_ride
-    except ObjectDoesNotExist:
-        return Response(
-            {
-                'status': True,
-                'message': 'there is no on-going ride',
-                'ride': None
-            }
-        )
+        try:
+            ride = user.user_ride
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'status': True,
+                    'message': 'there is no on-going ride',
+                    'ride': None
+                }
+            )
+    else:
+        try:
+            ride = user.driver_ride
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'status': True,
+                    'message': 'there is no on-going ride',
+                    'ride': None
+                }
+            )
     ride_ser = RideSerializer(ride).data
     return Response(
         {
