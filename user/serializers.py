@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, TripLocations, Vehicle
+from .models import User, TripLocations, Vehicle, Ride
 import geocoder
 
 
@@ -45,3 +45,23 @@ class TripLocationsSerializer(serializers.ModelSerializer):
             'place_id': geo.place_id,
             'accuracy': geo.accuracy
         }
+
+
+class RideSerializer(serializers.ModelSerializer):
+    to_location = serializers.SerializerMethodField('get_to_location')
+    from_location = serializers.SerializerMethodField('get_from_location')
+
+    class Meta:
+        model = Ride
+        fields = ["id", "start_destination_lat", "start_destination_lng", "end_destination_lat", "end_destination_lng",
+                  "from_location", "to_location", "price", "state", "otp_verified", "vehicle", "payment", "user_history",
+                  "driver_history"]
+
+    def get_to_location(self, ride):
+        geo = geocoder.osm([ride.end_destination_lat, ride.end_destination_lng], method='reverse')
+        print(geo.one_result.__dict__)
+        return geo.address
+
+    def get_from_location(self, ride):
+        geo = geocoder.osm([ride.end_destination_lat, ride.end_destination_lng], method='reverse')
+        return geo.address
