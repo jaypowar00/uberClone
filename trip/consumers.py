@@ -11,7 +11,7 @@ from trip.consumer_models import MockDriverConnectEventResult, MockDriverInitiat
     MockDriverReadyToPickupEventResult, MockDriverInProgressEventResult, MockDriverIncomingInitiateEvent, \
     MockDriverChangeSpeedEvent, Events, BroadcastDriverLiveLocationEvent, BroadcastDriverLiveLocationEventResult, \
     IdleDriverConnectEventResult, MockDriverOngoingInitiateEvent, CustomerPickedUpOtpEvent, \
-    CustomerPickedUpOtpEventResult
+    CustomerPickedUpOtpEventResult, DriverSelectedForRideResult
 from uberClone.settings import idle_drivers, ride_otps
 from user.models import Ride, Vehicle
 
@@ -317,7 +317,8 @@ class IdleDriverConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, code):
         if self.scope['user'].is_authenticated:
-            del idle_drivers[f'{self.scope["user"].id}']
+            if f'{self.scope["user"].id}' in idle_drivers:
+                del idle_drivers[f'{self.scope["user"].id}']
             await self.channel_layer.group_send(
                 self.live_session_group_name,
                 {
@@ -345,12 +346,23 @@ class IdleDriverConsumer(AsyncWebsocketConsumer):
                     }
                 )
 
+    async def driver_selected(self, event):
+        driverSelectedForRideResult = DriverSelectedForRideResult(event['ride_id'])
+        await self.send(text_data=json.dumps(driverSelectedForRideResult.to_json()))
+        await self.channel_layer.group_discard(
+            self.live_session_group_name,
+            self.channel_name
+        )
+        await self.close()
+        return
+
     async def liveshare_location(self, event):
         loc = event['location']
         loc.update({'user_id': self.scope['user'].id})
         loc.update({'vehicle_type': self.scope['vehicle']['type'] if self.scope['vehicle'] else Vehicle.Type.CAR_SEDAN})
         loc.update({'vehicle_number': self.scope['vehicle']['number'] if self.scope['vehicle'] else None})
         loc.update({'seat_capacity': self.scope['vehicle']['seat_capacity'] if self.scope['vehicle'] else None})
+        loc.update({'channel_name': self.channel_name})
         idle_drivers[f'{self.scope["user"].id}'] = loc
         broadcastDriverLiveLocationEventResult = BroadcastDriverLiveLocationEventResult(event['location'])
         await self.send(text_data=json.dumps(broadcastDriverLiveLocationEventResult.to_json()))

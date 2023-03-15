@@ -214,6 +214,7 @@ def search_nearby_drivers(request):
 
     nearby_drivers = driver_gdf_proj[~neighbours1.is_empty]
     nearby_drivers.drop('geometry', axis=1, inplace=True)
+    nearby_drivers.drop('channel_name', axis=1, inplace=True)
     distances = [geopy.distance.distance([jsn['lat'], jsn['lng']], [point['lat'], point['lng']]).meters for point in nearby_drivers.to_dict('records')]
     distances = {k: v for k, v in enumerate(distances)}
     distances = dict(sorted(distances.items(), key=lambda item: item[1]))

@@ -1,9 +1,10 @@
 import math
 import os
 import random
-import time
 from datetime import timedelta, datetime
 import requests
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -24,8 +25,9 @@ def book_ride(request):
                 'message': 'this feature is only for regular account types, not driver'
             }
         )
-    jsn = request.body
-    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'driver' in jsn):
+    jsn = request.data
+    # if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'driver' in jsn):
+    if 'driver' not in jsn:
         return Response(
             {
                 'status': False,
@@ -47,6 +49,13 @@ def book_ride(request):
             {
                 'status': False,
                 'message': 'provided driver account is not a driver account'
+            }
+        )
+    if f'{driver_user.id}' not in idle_drivers:
+        return Response(
+            {
+                'status': False,
+                'message': 'provided driver is not currently idle'
             }
         )
     if driver.vehicle is None:
@@ -98,6 +107,14 @@ def book_ride(request):
         user_history=user.id
     )
     ride.save()
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.send)(
+        idle_drivers[f'{driver_user.id}']['channel_name'],
+        {
+            'type': 'driver_selected',
+            'ride_id': ride.id
+        }
+    )
     return Response(
         {
             'state': True,
@@ -135,6 +152,8 @@ def cancel_ride(request):
             }
         )
     ride.state = Ride.State.CANCELLED
+    ride.user = None
+    ride.driver = None
     ride.save()
     return Response(
         {
