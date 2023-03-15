@@ -103,8 +103,8 @@ class Ride(models.Model):
         FINISHED = 'f', 'finished'
         CANCELLED = 'c', 'cancelled'
 
-    user = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='user_user', null=True)
-    driver = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='driver_user', null=True)
+    user = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='user_ride', null=True)
+    driver = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='driver_ride', null=True)
     start_destination_lat = models.FloatField(default=None, null=True)
     start_destination_lng = models.FloatField(default=None, null=True)
     end_destination_lat = models.FloatField(default=None, null=True)
