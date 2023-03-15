@@ -103,8 +103,8 @@ class Ride(models.Model):
         FINISHED = 'f', 'finished'
         CANCELLED = 'c', 'cancelled'
 
-    user = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='user_user')
-    driver = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='driver_user')
+    user = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='user_user', null=True)
+    driver = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='driver_user', null=True)
     start_destination_lat = models.FloatField(default=None, null=True)
     start_destination_lng = models.FloatField(default=None, null=True)
     end_destination_lat = models.FloatField(default=None, null=True)
@@ -114,5 +114,6 @@ class Ride(models.Model):
     state = models.CharField(max_length=1, choices=State.choices, default=State.STARTED)
     otp_verified = models.BooleanField(default=False)
     payment = models.OneToOneField(Payment, on_delete=models.DO_NOTHING, null=True, default=None)
-    user_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='ride_history')
+    user_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='user_ride_history', null=True, default=None)
+    driver_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='driver_ride_history', null=True, default=None)
     # booked_by = models.OneToOneField(User, on_delete=models.DO_NOTHING)
