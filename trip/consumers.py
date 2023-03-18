@@ -143,10 +143,16 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                     self.current_sent_distance += self.distances_between_all_geometry_pairs[self.current_index-1].meters
                     if self.current_index == len(self.var_coordinates)-1:
                         print(f'[+] 0 =================== \n [+] self.current_index {self.current_index}')
-                        mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
-                            driver_loc=self.var_coordinates[self.current_index],
-                            state=Ride.State.PICKUP_READY
-                        )
+                        if event['event'] == Events.MockDriverIncomingInitiateEvent.value:
+                            mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
+                                driver_loc=self.var_coordinates[self.current_index],
+                                state=Ride.State.PICKUP_READY
+                            )
+                        else:
+                            mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
+                                driver_loc=self.var_coordinates[self.current_index],
+                                state=Ride.State.FINISHED
+                            )
                         await self.send(text_data=json.dumps(mockDriverReadyToPickupEventResult.to_json()))
                         break
                     else:
@@ -159,10 +165,16 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                     print(f"{f'index: {self.current_index}' : <8} | {f'distance_pop: {self.distances_between_all_geometry_pairs[self.current_index-1].meters if self.current_index != 0 else 0.0} (same)': <33} | {f'distance_sent: {self.current_sent_distance}': <33} | {f'distance_travelled: {self.current_distance}': <33}")
                     if self.current_index == len(self.var_coordinates)-1:
                         print(f'[+] 2 =================== \n [+] self.current_index {self.current_index}')
-                        mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
-                            driver_loc=self.var_coordinates[self.current_index],
-                            state=Ride.State.PICKUP_READY
-                        )
+                        if event['event'] == Events.MockDriverIncomingInitiateEvent.value:
+                            mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
+                                driver_loc=self.var_coordinates[self.current_index],
+                                state=Ride.State.PICKUP_READY
+                            )
+                        else:
+                            mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
+                                driver_loc=self.var_coordinates[self.current_index],
+                                state=Ride.State.FINISHED
+                            )
                         await self.send(text_data=json.dumps(mockDriverReadyToPickupEventResult.to_json()))
                         break
                     else:
