@@ -99,14 +99,15 @@ def book_ride(request):
     price += ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
     ride = Ride(
         user=user,
-        driver=driver,
+        driver=driver_user,
         start_destination_lat=jsn['from_lat'],
         start_destination_lng=jsn['from_lng'],
         end_destination_lat=jsn['to_lat'],
         end_destination_lng=jsn['to_lng'],
         vehicle=vehicle,
         price=price,
-        user_history=user
+        user_history=user,
+        driver_history=driver_user
     )
     ride.save()
     channel_layer = get_channel_layer()
