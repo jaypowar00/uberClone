@@ -29,8 +29,7 @@ def book_ride(request):
             }
         )
     jsn = request.data
-    # if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'driver' in jsn):
-    if 'driver' not in jsn:
+    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'driver' in jsn):
         return Response(
             {
                 'status': False,
@@ -84,7 +83,7 @@ def book_ride(request):
                 'message': 'something went wrong while getting route details from start to destination locations'
             }
         )
-    price = ((response['distance'] / 1000.0) * 105) / vehicle.mileage
+    price = ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
     # getting price for driver idle location to customer pickup location travelling
     querystring = {"origin": f"{idle_drivers[f'{driver_user.id}']['lat']},{idle_drivers[f'{driver_user.id}']['lng']}",
                    "destination": f"{jsn['from_lat']},{jsn['from_lng']}"}
@@ -97,7 +96,7 @@ def book_ride(request):
                 'message': 'something went wrong while getting route details from start to destination locations'
             }
         )
-    price += ((response['distance'] / 1000.0) * 105) / vehicle.mileage
+    price += ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
     ride = Ride(
         user=user.id,
         driver=driver.id,
