@@ -142,13 +142,14 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 if (self.distances_between_all_geometry_pairs[self.current_index-1].meters + self.current_sent_distance) <= self.current_distance:
                     self.current_sent_distance += self.distances_between_all_geometry_pairs[self.current_index-1].meters
                     if self.current_index == len(self.var_coordinates)-1:
-                        print(f'[+] 0 =================== \n [+] self.current_index {self.current_index}')
                         if event['event'] == Events.MockDriverIncomingInitiateEvent.value:
+                            print(f'[+] 0 =================== \n [+] self.current_index {self.current_index} (state: {Ride.State.PICKUP_READY})')
                             mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
                                 driver_loc=self.var_coordinates[self.current_index],
                                 state=Ride.State.PICKUP_READY
                             )
                         else:
+                            print(f'[+] 0 =================== \n [+] self.current_index {self.current_index} (state: {Ride.State.FINISHED})')
                             mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
                                 driver_loc=self.var_coordinates[self.current_index],
                                 state=Ride.State.FINISHED
@@ -164,13 +165,14 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 else:
                     print(f"{f'index: {self.current_index}' : <8} | {f'distance_pop: {self.distances_between_all_geometry_pairs[self.current_index-1].meters if self.current_index != 0 else 0.0} (same)': <33} | {f'distance_sent: {self.current_sent_distance}': <33} | {f'distance_travelled: {self.current_distance}': <33}")
                     if self.current_index == len(self.var_coordinates)-1:
-                        print(f'[+] 2 =================== \n [+] self.current_index {self.current_index}')
                         if event['event'] == Events.MockDriverIncomingInitiateEvent.value:
+                            print(f'[+] 2 =================== \n [+] self.current_index {self.current_index} (state: {Ride.State.PICKUP_READY})')
                             mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
                                 driver_loc=self.var_coordinates[self.current_index],
                                 state=Ride.State.PICKUP_READY
                             )
                         else:
+                            print(f'[+] 2 =================== \n [+] self.current_index {self.current_index} (state: {Ride.State.FINISHED})')
                             mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
                                 driver_loc=self.var_coordinates[self.current_index],
                                 state=Ride.State.FINISHED

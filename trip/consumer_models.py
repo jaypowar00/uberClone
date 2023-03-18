@@ -126,7 +126,7 @@ class MockDriverReadyToPickupEventResultResponse:
 
 class MockDriverReadyToPickupEventResult:
 
-    def __init__(self, driver_loc: dict, state: Ride.State = Ride.State.PICKUP_READY):
+    def __init__(self, driver_loc: dict, state: Ride.State):
         self.response = MockDriverReadyToPickupEventResultResponse(driver_loc, state)
         self.event = Events.MockDriverReadyToPickupEventResult.value
 
