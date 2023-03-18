@@ -25,7 +25,7 @@ def get_trip_locations(request):
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def get_location_path(request):
-    if not (request.data.get('from_lat') and request.data.get('from_lon')):
+    if not (request.data.get('from_lat') and request.data.get('from_lng')):
         return Response(
             {
                 'status': False,
@@ -33,7 +33,7 @@ def get_location_path(request):
             }
         )
     from_lat = request.data.get('from_lat')
-    from_lon = request.data.get('from_lon')
+    from_lon = request.data.get('from_lng')
     if request.data.get('to_trip'):
         location = TripLocations.objects.filter(id=request.data.get('to_trip')).first()
         if location is None:
@@ -44,10 +44,10 @@ def get_location_path(request):
                 }
             )
         to_lat = location.lat
-        to_lon = location.lon
-    elif request.data.get('to_lat') and request.data.get('to_lon'):
+        to_lng = location.lon
+    elif request.data.get('to_lat') and request.data.get('to_lng'):
         to_lat = request.data.get('to_lat')
-        to_lon = request.data.get('to_lon')
+        to_lng = request.data.get('to_lng')
     else:
         return Response(
             {
@@ -55,7 +55,7 @@ def get_location_path(request):
                 'message': 'provide destination location!'
             }
         )
-    querystring = {"origin": f"{from_lat},{from_lon}", "destination": f"{to_lat},{to_lon}"}
+    querystring = {"origin": f"{from_lat},{from_lon}", "destination": f"{to_lat},{to_lng}"}
 
     headers = {
         "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
