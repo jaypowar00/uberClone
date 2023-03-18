@@ -181,7 +181,7 @@ class MockDriverOngoingInitiateEvent:
 
     def __init__(self, request, event):
         self.request = MockDriverOngoingInitiateEventRequest(**request)
-        self.event = Events.MockDriverIncomingInitiateEvent.value
+        self.event = Events.MockDriverOngoingInitiateEvent.value
         assert self.event == event, "passed event is incorrect fot this operation"
 
     def to_json(self):
