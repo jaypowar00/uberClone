@@ -53,7 +53,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 message="user is not authenticated",
                 route={},
                 state=None,
-                connection=False
+                connection=False,
+                error=self.scope['error']
             )
             await self.send(text_data=json.dumps(mockDriverConnectEventResult.to_json()))
             await self.channel_layer.group_discard(
