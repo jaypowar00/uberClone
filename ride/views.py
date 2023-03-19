@@ -6,6 +6,7 @@ import requests
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -109,7 +110,21 @@ def book_ride(request):
         user_history=user,
         driver_history=driver_user
     )
-    ride.save()
+    try:
+        ride.save()
+    except IntegrityError as err:
+        ongoing_ride_for = str(err)[str(err).find(':  Key (')+8:str(err).find('_id)=(')]
+        return Response(
+            {
+                'status': False,
+                'message':
+                    'current user already has an ongoing ride, please cancel previous ride to start a new one!'
+                    if ongoing_ride_for == 'user' else
+                    'provided driver is already doing another ride, try again with another driver',
+                'driver_already_book': True if ongoing_ride_for == 'driver' else None,
+                'user_already_book': True if ongoing_ride_for == 'user' else None
+            }
+        )
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.send)(
         idle_drivers[f'{driver_user.id}']['channel_name'],
