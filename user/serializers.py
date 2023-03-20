@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 from .models import User, TripLocations, Vehicle, Ride
 import geocoder
@@ -65,3 +66,91 @@ class RideSerializer(serializers.ModelSerializer):
     def get_from_location(self, ride):
         geo = geocoder.osm([ride.end_destination_lat, ride.end_destination_lng], method='reverse')
         return geo.address
+
+
+class UserGeneralSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    public_id = serializers.UUIDField()
+    email = serializers.EmailField()
+    name = serializers.CharField()
+    username = serializers.CharField()
+    address = serializers.CharField(allow_null=True, allow_blank=True)
+    gender = serializers.CharField()
+    phone = serializers.CharField(allow_null=True, allow_blank=True)
+    dob = serializers.DateField(allow_null=True)
+    account_type = serializers.ChoiceField(choices=User.AccountType.choices)
+    date_joined = serializers.DateTimeField()
+    about = serializers.CharField()
+
+
+class GeneralResponse(serializers.Serializer):
+    status = serializers.BooleanField()
+    message = serializers.CharField()
+
+
+@extend_schema_serializer(exclude_fields=['id'])
+class User_UserProfileResponse(UserGeneralSerializer):
+    pass
+
+
+class UserProfileResponse(GeneralResponse):
+    user = User_UserProfileResponse(allow_null=True, required=False)
+
+
+class UserRegisterRequest(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+    name = serializers.CharField(max_length=150)
+    gender = serializers.ChoiceField(choices=User.Gender.choices)
+    phone = serializers.CharField(max_length=20)
+    address = serializers.CharField(max_length=200)
+    account_type = serializers.ChoiceField(choices=User.AccountType.choices)
+
+
+class Context_UserRegisterResponse(serializers.Serializer):
+    email = serializers.EmailField()
+    name = serializers.CharField()
+    gender = serializers.CharField()
+    phone = serializers.CharField()
+    address = serializers.CharField()
+    account_type = serializers.ChoiceField(choices=User.AccountType.choices)
+
+
+class UserRegisterResponse(GeneralResponse):
+    context = Context_UserRegisterResponse(allow_null=True, required=False)
+
+
+class UserLoginRequest(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+
+class UserLoginResponse(GeneralResponse):
+    access_token = serializers.CharField(allow_null=True, required=False)
+    refresh_token = serializers.CharField(allow_null=True, required=False)
+    csrf_token = serializers.CharField(allow_null=True, required=False)
+    user = UserGeneralSerializer(allow_null=True, required=False)
+
+
+class RefreshTokenResponse(GeneralResponse):
+    access_token = serializers.CharField(required=False, allow_null=True)
+
+
+class UserUpdateRequest(serializers.Serializer):
+    email = serializers.EmailField(required=False)
+    name = serializers.CharField(required=False)
+    username = serializers.CharField(required=False)
+    dob = serializers.DateField(required=False)
+    about = serializers.CharField(required=False)
+    gender = serializers.CharField(required=False)
+    phone = serializers.CharField(required=False)
+    address = serializers.CharField(required=False)
+
+
+class UserUpdateResponse(GeneralResponse):
+    context = UserUpdateRequest(required=False, allow_null=True)
+
+
+class UserUpdatePasswordRequest(serializers.Serializer):
+    new_password = serializers.CharField()
+    old_password = serializers.CharField()

@@ -4,6 +4,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.middleware.csrf import get_token
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -11,14 +12,28 @@ from uberClone import settings
 from uberClone.settings import blackListedTokens
 from user.decorators import check_blacklisted_token
 from user.models import User, Driver
-from user.serializers import UserSerializer
+from user.serializers import UserSerializer, UserProfileResponse, UserRegisterResponse, \
+    UserRegisterRequest, UserLoginRequest, UserLoginResponse, \
+    RefreshTokenResponse, UserUpdateRequest, UserUpdateResponse,\
+    UserUpdatePasswordRequest, UserGeneralSerializer
 from user.utils import generate_access_token, generate_refresh_token
 
 
+@extend_schema(
+    description="Fetch logged-in user details",
+    responses={
+        200: OpenApiResponse(
+            response=UserProfileResponse
+        )
+    }
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def user_home(request):
+    """
+   route to retrieve logged-in user details
+   """
     print(request.user)
     print(request.user.is_authenticated)
     if request.user and request.user.is_authenticated:
@@ -39,9 +54,21 @@ def user_home(request):
     )
 
 
-@api_view(['POST'])
+@extend_schema(
+    description="Register a new user",
+    request=UserRegisterRequest,
+    responses={
+        200: OpenApiResponse(
+            response=UserRegisterResponse
+        )
+    }
+)
 @permission_classes([AllowAny])
+@api_view(['POST'])
 def user_register(request):
+    """
+    route to register a user on platform
+    """
     context = {}
     jsn: dict
     try:
@@ -103,6 +130,15 @@ def user_register(request):
         )
 
 
+@extend_schema(
+    description="login user",
+    request=UserLoginRequest,
+    responses={
+        200: OpenApiResponse(
+            response=UserLoginResponse
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_login(request):
@@ -147,6 +183,28 @@ def user_login(request):
     )
 
 
+@extend_schema(
+    description="Logout user using Authorization header",
+    parameters=[
+        OpenApiParameter(
+            name='Authorization',
+            location=OpenApiParameter.HEADER,
+            type=str,
+            description="auth token which requires 'Token' prefix"
+        ),
+        OpenApiParameter(
+            name='refreshtoken',
+            location=OpenApiParameter.HEADER,
+            type=str,
+            description="pass the refresh token"
+        ),
+    ],
+    responses={
+        200: OpenApiResponse(
+            response=UserGeneralSerializer
+        )
+    }
+)
 @api_view(['POST'])
 def user_logout(request):
     access_token = False
@@ -233,6 +291,21 @@ def user_logout(request):
     )
 
 
+@extend_schema(
+    description="refresh user token",
+    parameters=[
+        OpenApiParameter(
+            name='refreshtoken',
+            location=OpenApiParameter.HEADER,
+            type=str
+        )
+    ],
+    responses={
+        200: OpenApiResponse(
+            response=RefreshTokenResponse
+        )
+    }
+)
 @api_view(['PUT'])
 @check_blacklisted_token
 def refresh_token_view(request):
@@ -281,6 +354,14 @@ def refresh_token_view(request):
     )
 
 
+@extend_schema(
+    description="deletes logged-in user's profile",
+    responses={
+        200: OpenApiResponse(
+            response=UserGeneralSerializer
+        )
+    }
+)
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -298,6 +379,15 @@ def user_delete(request):
     )
 
 
+@extend_schema(
+    description="update user details. Must pass atleast one of the parameters!",
+    request=UserUpdateRequest,
+    responses={
+        200: OpenApiResponse(
+            response=UserUpdateResponse
+        )
+    }
+)
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -358,6 +448,15 @@ def user_update(request):
         )
 
 
+@extend_schema(
+    description="update user password",
+    request=UserUpdatePasswordRequest,
+    responses={
+        200: OpenApiResponse(
+            response=UserGeneralSerializer
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token

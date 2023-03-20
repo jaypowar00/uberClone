@@ -2,6 +2,7 @@ import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.middleware.csrf import CsrfViewMiddleware
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
@@ -50,3 +51,16 @@ class SafeJWTAuthentication(BaseAuthentication):
         reason = check.process_view(request, None, (), {})
         if reason:
             raise AuthenticationFailed('CSRF Failed: %s' % reason)
+
+
+class MyAuthenticationScheme(OpenApiAuthenticationExtension):
+    target_class = SafeJWTAuthentication  # full import path OR class ref
+    name = 'SafeJWTAuthentication'  # name used in the schema
+
+    def get_security_definition(self, auto_schema):
+        return {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Token-based authentication with required prefix "Token"',
+        }

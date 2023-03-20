@@ -1,15 +1,28 @@
 import geopy.distance
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes, api_view
+from driver.serializers import AddVehicleRequest, VehicleDetailsRequest, \
+    UpdateVehicleDetailsRequest, NearbyIdleDriversRequest, NearbyIdleDriversResponse, \
+    VehicleDetailsResponse
 from uberClone.settings import idle_drivers
 from user.models import Vehicle, User
 from user.decorators import check_blacklisted_token
-from user.serializers import VehicleSerializer
+from user.serializers import VehicleSerializer, GeneralResponse
 import pandas as pd
 import geopandas as gpd
 
 
+@extend_schema(
+    description="add vehicle for logged-in driver",
+    request=AddVehicleRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GeneralResponse
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -56,6 +69,15 @@ def add_vehicle(request):
     )
 
 
+@extend_schema(
+    description="get vehicle details fpr provided driver_id",
+    request=VehicleDetailsRequest,
+    responses={
+        200: OpenApiResponse(
+            response=VehicleDetailsResponse
+        )
+    }
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -100,6 +122,15 @@ def vehicle_details(request):
         )
 
 
+@extend_schema(
+    description="update vehicle details for logged-in driver",
+    request=UpdateVehicleDetailsRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GeneralResponse
+        )
+    }
+)
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -143,6 +174,14 @@ def update_vehicle(request):
         )
 
 
+@extend_schema(
+    description="delete logged-in driver's vehicle info",
+    responses={
+        200: OpenApiResponse(
+            response=GeneralResponse
+        )
+    }
+)
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -172,6 +211,15 @@ def delete_vehicle(request):
         )
 
 
+@extend_schema(
+    description="search nearby idle drivers from given location geo coordinates",
+    request=NearbyIdleDriversRequest,
+    responses={
+        200: OpenApiResponse(
+            response=NearbyIdleDriversResponse
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token

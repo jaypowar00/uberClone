@@ -7,16 +7,30 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+
+from ride.serializers import UserRideResponse, BookRideRequest, BookRideResponse, \
+    CancleRideRequest, GenerateRideOTPRequest, GenerateRideOTPResponse, \
+    VerifyRideOTPRequest, GetRideHistoryResponse
 from uberClone.settings import idle_drivers, ride_otps
 from user.decorators import check_blacklisted_token
 from user.models import User, Ride
-from user.serializers import RideSerializer
+from user.serializers import RideSerializer, GeneralResponse
 from django.db.models import Q
 
 
+@extend_schema(
+    description="book a ride for customer",
+    request=BookRideRequest,
+    responses={
+        200: OpenApiResponse(
+            response=BookRideResponse
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -142,6 +156,15 @@ def book_ride(request):
     )
 
 
+@extend_schema(
+    description="cancel a customer ride",
+    request=CancleRideRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GeneralResponse
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -181,6 +204,15 @@ def cancel_ride(request):
     )
 
 
+@extend_schema(
+    description="generate customer otp for a PICKUP_READY ride",
+    request=GenerateRideOTPRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GenerateRideOTPResponse
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -220,6 +252,15 @@ def generate_otp(request):
     )
 
 
+@extend_schema(
+    description="verify customers otp at driver side",
+    request=VerifyRideOTPRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GeneralResponse
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -279,6 +320,14 @@ def verify_otp(request):
     )
 
 
+@extend_schema(
+    description="get logged-in customer/driver ride history which are not in 'STARTED' state",
+    responses={
+        200: OpenApiResponse(
+            response=GetRideHistoryResponse
+        )
+    }
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
@@ -313,6 +362,14 @@ def get_ride_history(request):
     )
 
 
+@extend_schema(
+    description="get logged-in Customer/Driver current ongoing ride details",
+    responses={
+        200: OpenApiResponse(
+            response=UserRideResponse
+        )
+    }
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token

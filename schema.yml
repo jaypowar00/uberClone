@@ -1,0 +1,1502 @@
+openapi: 3.0.3
+info:
+  title: Uber Clone API
+  version: 0.0.0
+  description: The backend created for uber clone project consisting of both http
+    endpoints and websocket endpoints. This doc is provided for those http endpoints.
+paths:
+  /driver/add-vehicle:
+    post:
+      operationId: driver_add_vehicle_create
+      description: add vehicle for logged-in driver
+      tags:
+      - driver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddVehicleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddVehicleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddVehicleRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralResponse'
+          description: ''
+  /driver/delete-vehicle:
+    delete:
+      operationId: driver_delete_vehicle_destroy
+      description: delete logged-in driver's vehicle info
+      tags:
+      - driver
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralResponse'
+          description: ''
+  /driver/nearby:
+    post:
+      operationId: driver_nearby_create
+      description: search nearby idle drivers from given location geo coordinates
+      tags:
+      - driver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NearbyIdleDriversRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NearbyIdleDriversRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NearbyIdleDriversRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NearbyIdleDriversResponse'
+          description: ''
+  /driver/update-vehicle:
+    put:
+      operationId: driver_update_vehicle_update
+      description: update vehicle details for logged-in driver
+      tags:
+      - driver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVehicleDetailsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateVehicleDetailsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateVehicleDetailsRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralResponse'
+          description: ''
+  /driver/vehicle:
+    get:
+      operationId: driver_vehicle_retrieve
+      description: get vehicle details fpr provided driver_id
+      tags:
+      - driver
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleDetailsResponse'
+          description: ''
+  /ride/:
+    get:
+      operationId: ride_retrieve
+      description: get logged-in Customer/Driver current ongoing ride details
+      tags:
+      - ride
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRideResponse'
+          description: ''
+  /ride/book:
+    post:
+      operationId: ride_book_create
+      description: book a ride for customer
+      tags:
+      - ride
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookRideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookRideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookRideRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookRideResponse'
+          description: ''
+  /ride/cancel:
+    post:
+      operationId: ride_cancel_create
+      description: cancel a customer ride
+      tags:
+      - ride
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancleRideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancleRideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancleRideRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralResponse'
+          description: ''
+  /ride/generate-otp:
+    post:
+      operationId: ride_generate_otp_create
+      description: generate customer otp for a PICKUP_READY ride
+      tags:
+      - ride
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRideOTPRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GenerateRideOTPRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GenerateRideOTPRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateRideOTPResponse'
+          description: ''
+  /ride/history:
+    get:
+      operationId: ride_history_retrieve
+      description: get logged-in customer/driver ride history which are not in 'STARTED'
+        state
+      tags:
+      - ride
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRideHistoryResponse'
+          description: ''
+  /ride/verify-otp:
+    post:
+      operationId: ride_verify_otp_create
+      description: verify customers otp at driver side
+      tags:
+      - ride
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRideOTPRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyRideOTPRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyRideOTPRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralResponse'
+          description: ''
+  /schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /trip/get-location-path:
+    post:
+      operationId: trip_get_location_path_create
+      description: get direction path from start-location to end-location
+      tags:
+      - trip
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetLocationPathRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GetLocationPathRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GetLocationPathRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetLocationPathResponse'
+          description: ''
+  /trip/locations:
+    get:
+      operationId: trip_locations_retrieve
+      description: get famous trip locations
+      tags:
+      - trip
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTripLocationsResponse'
+          description: ''
+  /user/:
+    get:
+      operationId: user_retrieve
+      description: Fetch logged-in user details
+      tags:
+      - user
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+          description: ''
+  /user/delete:
+    delete:
+      operationId: user_delete_destroy
+      description: deletes logged-in user's profile
+      tags:
+      - user
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGeneral'
+          description: ''
+  /user/login:
+    post:
+      operationId: user_login_create
+      description: login user
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoginResponse'
+          description: ''
+  /user/logout:
+    post:
+      operationId: user_logout_create
+      description: Logout user using Authorization header
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        description: auth token which requires 'Token' prefix
+      - in: header
+        name: refreshtoken
+        schema:
+          type: string
+        description: pass the refresh token
+      tags:
+      - user
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGeneral'
+          description: ''
+  /user/refresh-token:
+    put:
+      operationId: user_refresh_token_update
+      description: refresh user token
+      parameters:
+      - in: header
+        name: refreshtoken
+        schema:
+          type: string
+      tags:
+      - user
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+          description: ''
+  /user/register:
+    post:
+      operationId: user_register_create
+      description: Register a new user
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegisterResponse'
+          description: ''
+  /user/update:
+    put:
+      operationId: user_update_update
+      description: update user details. Must pass atleast one of the parameters!
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+          description: ''
+  /user/update/password:
+    post:
+      operationId: user_update_password_create
+      description: update user password
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdatePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUpdatePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdatePasswordRequest'
+        required: true
+      security:
+      - SafeJWTAuthentication: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGeneral'
+          description: ''
+components:
+  schemas:
+    AccountTypeEnum:
+      enum:
+      - R
+      - D
+      type: string
+      description: |-
+        * `R` - Regular
+        * `D` - Driver
+    AddVehicleRequest:
+      type: object
+      properties:
+        vehicle_no:
+          type: string
+        seat_cap:
+          type: integer
+        mileage:
+          type: number
+          format: double
+        vehicle_type:
+          $ref: '#/components/schemas/VehicleTypeEnum'
+      required:
+      - mileage
+      - seat_cap
+      - vehicle_no
+      - vehicle_type
+    BookRideRequest:
+      type: object
+      properties:
+        from_lat:
+          type: number
+          format: double
+        from_lng:
+          type: number
+          format: double
+        to_lat:
+          type: number
+          format: double
+        to_lng:
+          type: number
+          format: double
+        driver:
+          type: integer
+      required:
+      - driver
+      - from_lat
+      - from_lng
+      - to_lat
+      - to_lng
+    BookRideResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        ride_id:
+          type: integer
+          nullable: true
+      required:
+      - message
+      - status
+    Bounds_Route_GetLocationPath:
+      type: object
+      properties:
+        south:
+          type: number
+          format: double
+        west:
+          type: number
+          format: double
+        north:
+          type: number
+          format: double
+        east:
+          type: number
+          format: double
+      required:
+      - east
+      - north
+      - south
+      - west
+    CancleRideRequest:
+      type: object
+      properties:
+        ride_id:
+          type: integer
+      required:
+      - ride_id
+    Context_UserRegisterResponse:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        gender:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+      required:
+      - account_type
+      - address
+      - email
+      - gender
+      - name
+      - phone
+    DriverGeneral:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        user_id:
+          type: integer
+        vehicle_type:
+          $ref: '#/components/schemas/VehicleTypeEnum'
+        vehicle_number:
+          type: string
+        seat_capacity:
+          type: integer
+      required:
+      - lat
+      - lng
+      - seat_capacity
+      - user_id
+      - vehicle_number
+      - vehicle_type
+    GenderEnum:
+      enum:
+      - M
+      - F
+      type: string
+      description: |-
+        * `M` - Male
+        * `F` - Female
+    GeneralResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+      required:
+      - message
+      - status
+    GenerateRideOTPRequest:
+      type: object
+      properties:
+        ride_id:
+          type: integer
+      required:
+      - ride_id
+    GenerateRideOTPResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        otp:
+          type: string
+          nullable: true
+      required:
+      - status
+    GeoLocation:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+      required:
+      - lat
+      - lng
+    Geo_Location_GetTripLocationsResponse:
+      type: object
+      properties:
+        country:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        region:
+          type: string
+        village:
+          type: string
+        state:
+          type: string
+        display_address:
+          type: string
+        postcode:
+          type: string
+        place_id:
+          type: integer
+        accuracy:
+          type: number
+          format: double
+      required:
+      - accuracy
+      - city
+      - country
+      - display_address
+      - district
+      - place_id
+      - postcode
+      - region
+      - state
+      - village
+    Geometry_Route_GetLocationPath:
+      type: object
+      properties:
+        coordinates:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoLocation'
+      required:
+      - coordinates
+    GetLocationPathRequest:
+      type: object
+      properties:
+        from_lat:
+          type: number
+          format: double
+        from_lng:
+          type: number
+          format: double
+      required:
+      - from_lat
+      - from_lng
+    GetLocationPathResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        route:
+          allOf:
+          - $ref: '#/components/schemas/Route_GetLocationPath'
+          nullable: true
+      required:
+      - status
+    GetRideHistoryResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        rides:
+          type: array
+          items:
+            $ref: '#/components/schemas/RideGeneral'
+      required:
+      - rides
+      - status
+    GetTripLocationsResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location_GetTripLocationsResponse'
+          nullable: true
+      required:
+      - status
+    Location_GetTripLocationsResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        thumbnail:
+          type: string
+          format: uri
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        description:
+          type: string
+        geo:
+          $ref: '#/components/schemas/Geo_Location_GetTripLocationsResponse'
+      required:
+      - address
+      - description
+      - geo
+      - id
+      - lat
+      - lng
+      - name
+      - thumbnail
+    NearbyIdleDriversRequest:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        vehicle_type:
+          $ref: '#/components/schemas/VehicleTypeEnum'
+      required:
+      - lat
+      - lng
+      - vehicle_type
+    NearbyIdleDriversResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        drivers:
+          type: array
+          items:
+            $ref: '#/components/schemas/DriverGeneral'
+          nullable: true
+        nearest_driver:
+          allOf:
+          - $ref: '#/components/schemas/DriverGeneral'
+          nullable: true
+      required:
+      - status
+    RefreshTokenResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        access_token:
+          type: string
+          nullable: true
+      required:
+      - message
+      - status
+    RideGeneral:
+      type: object
+      properties:
+        id:
+          type: integer
+        start_destination_lat:
+          type: number
+          format: double
+        start_destination_lng:
+          type: number
+          format: double
+        end_destination_lat:
+          type: number
+          format: double
+        end_destination_lng:
+          type: number
+          format: double
+        from_location:
+          type: string
+        to_location:
+          type: string
+        price:
+          type: number
+          format: double
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        otp_verified:
+          type: boolean
+        vehicle:
+          type: integer
+        payment:
+          type: integer
+          nullable: true
+        user_history:
+          type: integer
+        driver_history:
+          type: integer
+      required:
+      - driver_history
+      - end_destination_lat
+      - end_destination_lng
+      - from_location
+      - id
+      - otp_verified
+      - price
+      - start_destination_lat
+      - start_destination_lng
+      - state
+      - to_location
+      - user_history
+      - vehicle
+    Route_GetLocationPath:
+      type: object
+      properties:
+        distance:
+          type: integer
+        duration:
+          type: integer
+        bounds:
+          $ref: '#/components/schemas/Bounds_Route_GetLocationPath'
+        geometry:
+          $ref: '#/components/schemas/Geometry_Route_GetLocationPath'
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/Step_Route_GetLocationPath'
+      required:
+      - bounds
+      - distance
+      - duration
+      - geometry
+      - steps
+    StateEnum:
+      enum:
+      - s
+      - i
+      - p
+      - o
+      - f
+      - c
+      type: string
+      description: |-
+        * `s` - started
+        * `i` - driver incoming
+        * `p` - pickup ready
+        * `o` - ongoing
+        * `f` - finished
+        * `c` - cancelled
+    Step_Route_GetLocationPath:
+      type: object
+      properties:
+        distance:
+          type: number
+          format: double
+        duration:
+          type: number
+          format: double
+        start_point_index:
+          type: integer
+        start_point:
+          $ref: '#/components/schemas/GeoLocation'
+        end_point_index:
+          type: integer
+        end_point:
+          $ref: '#/components/schemas/GeoLocation'
+        bounds:
+          $ref: '#/components/schemas/Bounds_Route_GetLocationPath'
+        maneuver:
+          type: string
+          nullable: true
+      required:
+      - bounds
+      - distance
+      - duration
+      - end_point
+      - end_point_index
+      - start_point
+      - start_point_index
+    UpdateVehicleDetailsRequest:
+      type: object
+      properties:
+        vehicle_no:
+          type: string
+        seat_cap:
+          type: integer
+        mileage:
+          type: number
+          format: double
+        vehicle_type:
+          $ref: '#/components/schemas/VehicleTypeEnum'
+      required:
+      - mileage
+      - seat_cap
+      - vehicle_no
+      - vehicle_type
+    UserGeneral:
+      type: object
+      properties:
+        id:
+          type: integer
+        public_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        username:
+          type: string
+        address:
+          type: string
+          nullable: true
+        gender:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        dob:
+          type: string
+          format: date
+          nullable: true
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        date_joined:
+          type: string
+          format: date-time
+        about:
+          type: string
+      required:
+      - about
+      - account_type
+      - address
+      - date_joined
+      - dob
+      - email
+      - gender
+      - id
+      - name
+      - phone
+      - public_id
+      - username
+    UserLoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+      - email
+      - password
+    UserLoginResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        access_token:
+          type: string
+          nullable: true
+        refresh_token:
+          type: string
+          nullable: true
+        csrf_token:
+          type: string
+          nullable: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserGeneral'
+          nullable: true
+      required:
+      - message
+      - status
+    UserProfileResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        user:
+          allOf:
+          - $ref: '#/components/schemas/User_UserProfileResponse'
+          nullable: true
+      required:
+      - message
+      - status
+    UserRegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        name:
+          type: string
+          maxLength: 150
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        phone:
+          type: string
+          maxLength: 20
+        address:
+          type: string
+          maxLength: 200
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+      required:
+      - account_type
+      - address
+      - email
+      - gender
+      - name
+      - password
+      - phone
+    UserRegisterResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        context:
+          allOf:
+          - $ref: '#/components/schemas/Context_UserRegisterResponse'
+          nullable: true
+      required:
+      - message
+      - status
+    UserRideResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        id:
+          type: integer
+        start_destination_lat:
+          type: number
+          format: double
+        start_destination_lng:
+          type: number
+          format: double
+        end_destination_lat:
+          type: number
+          format: double
+        end_destination_lng:
+          type: number
+          format: double
+        from_location:
+          type: string
+        to_location:
+          type: string
+        price:
+          type: number
+          format: double
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        otp_verified:
+          type: boolean
+        vehicle:
+          type: integer
+        payment:
+          type: integer
+          nullable: true
+        user_history:
+          type: integer
+        driver_history:
+          type: integer
+      required:
+      - driver_history
+      - end_destination_lat
+      - end_destination_lng
+      - from_location
+      - id
+      - otp_verified
+      - price
+      - start_destination_lat
+      - start_destination_lng
+      - state
+      - status
+      - to_location
+      - user_history
+      - vehicle
+    UserUpdatePasswordRequest:
+      type: object
+      properties:
+        new_password:
+          type: string
+        old_password:
+          type: string
+      required:
+      - new_password
+      - old_password
+    UserUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        username:
+          type: string
+        dob:
+          type: string
+          format: date
+        about:
+          type: string
+        gender:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+    UserUpdateResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        context:
+          allOf:
+          - $ref: '#/components/schemas/UserUpdateRequest'
+          nullable: true
+      required:
+      - message
+      - status
+    User_UserProfileResponse:
+      type: object
+      properties:
+        public_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        username:
+          type: string
+        address:
+          type: string
+          nullable: true
+        gender:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        dob:
+          type: string
+          format: date
+          nullable: true
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        date_joined:
+          type: string
+          format: date-time
+        about:
+          type: string
+      required:
+      - about
+      - account_type
+      - address
+      - date_joined
+      - dob
+      - email
+      - gender
+      - name
+      - phone
+      - public_id
+      - username
+    VehicleDetailsResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/VehicleGeneral'
+          nullable: true
+      required:
+      - status
+    VehicleGeneral:
+      type: object
+      properties:
+        id:
+          type: integer
+        vehicle_number:
+          type: string
+        seat_capacity:
+          type: integer
+        mileage:
+          type: number
+          format: double
+        type:
+          type: string
+      required:
+      - id
+      - mileage
+      - seat_capacity
+      - type
+      - vehicle_number
+    VehicleTypeEnum:
+      enum:
+      - BIKE
+      - SEDAN
+      - SUV
+      - RIK
+      type: string
+      description: |-
+        * `BIKE` - Bike
+        * `SEDAN` - Car_Sedan
+        * `SUV` - Car_Suv
+        * `RIK` - Rikshaw
+    VerifyRideOTPRequest:
+      type: object
+      properties:
+        otp:
+          type: string
+        ride_id:
+          type: integer
+      required:
+      - otp
+      - ride_id
+  securitySchemes:
+    SafeJWTAuthentication:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

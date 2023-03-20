@@ -1,13 +1,25 @@
 import os
 import requests
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+
+from trip.serializers import GetLocationPathRequest, GetLocationPathResponse, \
+    GetTripLocationsResponse
 from user.decorators import check_blacklisted_token
 from user.models import TripLocations
 from user.serializers import TripLocationsSerializer
 
 
+@extend_schema(
+    description="get famous trip locations",
+    responses={
+        200: OpenApiResponse(
+            response=GetTripLocationsResponse
+        )
+    }
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_trip_locations(request):
@@ -21,6 +33,15 @@ def get_trip_locations(request):
     )
 
 
+@extend_schema(
+    description="get direction path from start-location to end-location",
+    request=GetLocationPathRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GetLocationPathResponse
+        )
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token

@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'ride',
     'corsheaders',
     'rest_framework',
+    'drf_spectacular',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -148,7 +149,14 @@ REST_FRAMEWORK = {
         'user.authentication.SafeJWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
-    'EXCEPTION_HANDLER': 'user.utils.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'user.utils.custom_exception_handler',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Uber Clone API',
+    'DESCRIPTION': 'The backend created for uber clone project consisting of both http endpoints and websocket '
+                   'endpoints. This doc is provided for those http endpoints.',
 }
 
 CHANNEL_LAYERS = {
