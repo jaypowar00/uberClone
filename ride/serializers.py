@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from user.models import Ride
+from user.models import Ride, Vehicle
 from user.serializers import GeneralResponse
 
 
@@ -29,11 +29,11 @@ class BookRideRequest(serializers.Serializer):
     from_lng = serializers.FloatField()
     to_lat = serializers.FloatField()
     to_lng = serializers.FloatField()
-    driver = serializers.IntegerField()
+    vehicle_type = serializers.ChoiceField(choices=Vehicle.Type.choices)
 
 
 class BookRideResponse(GeneralResponse):
-    ride_id = serializers.IntegerField(allow_null=True, required=False)
+    ride = serializers.IntegerField(allow_null=True, required=False)
 
 
 class CancleRideRequest(serializers.Serializer):
