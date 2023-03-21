@@ -371,6 +371,16 @@ class IdleDriverConsumer(AsyncWebsocketConsumer):
         await self.close()
         return
 
+
+    async def driver_ride_ongoing(self, event):
+        print('[+] driver ongoing disconnected')
+        await self.channel_layer.group_discard(
+            self.live_session_group_name,
+            self.channel_name
+        )
+        await self.close()
+        return
+
     async def liveshare_location(self, event):
         loc = event['location']
         loc.update({'user_id': self.scope['user'].id})

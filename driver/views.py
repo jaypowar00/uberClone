@@ -13,6 +13,8 @@ from user.serializers import VehicleSerializer, GeneralResponse
 import pandas as pd
 import geopandas as gpd
 
+from user.utils import get_nearby_drivers
+
 
 @extend_schema(
     description="add vehicle for logged-in driver",
@@ -232,53 +234,20 @@ def search_nearby_drivers(request):
                 'message': 'missing some parameters in request (required data: lat, lng, vehicle_type)'
             }
         )
-    cust_cords = [
-        {'lat': jsn['lat'], 'lng': jsn['lng']}
-    ]
-    driver_cords = [v for v in idle_drivers.values()]
-    print(idle_drivers)
-    print(driver_cords)
-    if len(idle_drivers) == 0:
+    res = get_nearby_drivers(jsn['lat'], jsn['lng'], jsn['vehicle_type'])
+    if len(res["drivers"]) == 0:
         return Response(
             {
                 'status': False,
                 'drivers': [],
-                'message': 'currently, no drivers are idle'
-            }
-        )
-    driver_df = pd.DataFrame(driver_cords)
-    cust_df = pd.DataFrame(cust_cords)
-
-    driver_df = driver_df[driver_df['vehicle_type'] == jsn['vehicle_type']]
-
-    driver_gdf = gpd.GeoDataFrame(driver_df, geometry=gpd.points_from_xy(driver_df['lat'], driver_df['lng']), crs="EPSG:4326")
-    cust_gdf = gpd.GeoDataFrame(cust_df, geometry=gpd.points_from_xy(cust_df['lat'], cust_df['lng']), crs="EPSG:4326")
-
-    driver_gdf_proj = driver_gdf.to_crs("EPSG:3857")
-    cust_gdf_proj = cust_gdf.to_crs("EPSG:3857")
-
-    x = cust_gdf_proj.buffer(3845.885 * 3).unary_union
-    neighbours1 = driver_gdf_proj['geometry'].intersection(x)
-
-    nearby_drivers = driver_gdf_proj[~neighbours1.is_empty]
-    nearby_drivers.drop('geometry', axis=1, inplace=True)
-    nearby_drivers.drop('channel_name', axis=1, inplace=True)
-    distances = [geopy.distance.distance([jsn['lat'], jsn['lng']], [point['lat'], point['lng']]).meters for point in nearby_drivers.to_dict('records')]
-    distances = {k: v for k, v in enumerate(distances)}
-    distances = dict(sorted(distances.items(), key=lambda item: item[1]))
-    if len(list(distances.keys()))>0:
-        return Response(
-            {
-                'status': True,
-                'drivers': nearby_drivers.to_dict('records'),
-                'nearest_driver': nearby_drivers.to_dict('records')[list(distances.keys())[0]]
+                'message': res['message']
             }
         )
     return Response(
         {
             'status': True,
-            'drivers': nearby_drivers.to_dict('records'),
-            'nearest_driver': None
+            'drivers': res['drivers'],
+            'nearest_driver': res['nearest_driver']
         }
     )
 

@@ -21,6 +21,8 @@ from user.models import User, Ride
 from user.serializers import RideSerializer, GeneralResponse
 from django.db.models import Q
 
+from user.utils import get_nearby_drivers
+
 
 @extend_schema(
     description="book a ride for customer",
@@ -44,116 +46,138 @@ def book_ride(request):
             }
         )
     jsn = request.data
-    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'driver' in jsn):
+    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'vehicle_type' in jsn):
         return Response(
             {
                 'status': False,
-                'message': 'missing some fields in the request body (required data: from_lat, from_lng, to_lat, to_lng)'
+                'message': 'missing some fields in the request body (required data: from_lat, from_lng, to_lat, to_lng, vehicle_type)'
             }
         )
-    driver_user = User.objects.filter(id=jsn['driver']).first()
-    if driver_user is None:
-        return Response(
-            {
-                'status': False,
-                'message': 'provided driver account does not exists'
-            }
-        )
-    try:
-        driver = driver_user.driver
-    except User.driver.RelatedObjectDoesNotExist:
-        return Response(
-            {
-                'status': False,
-                'message': 'provided driver account is not a driver account'
-            }
-        )
-    if f'{driver_user.id}' not in idle_drivers:
-        return Response(
-            {
-                'status': False,
-                'message': 'provided driver is not currently idle'
-            }
-        )
-    if driver.vehicle is None:
-        return Response(
-            {
-                'status': False,
-                'message': 'provided driver account does not owns a vehicle yet'
-            }
-        )
-    vehicle = driver.vehicle
-    # getting price for customer pickup location to destination location travelling
-    querystring = {"origin": f"{jsn['from_lat']},{jsn['from_lng']}", "destination": f"{jsn['to_lat']},{jsn['to_lng']}"}
-    headers = {
-        "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
-        "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
-    }
-    response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers,
-                                params=querystring).json()
-    if response is None:
-        return Response(
-            {
-                'status': False,
-                'message': 'something went wrong while getting route details from start to destination locations'
-            }
-        )
-    price = ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
-    # getting price for driver idle location to customer pickup location travelling
-    querystring = {"origin": f"{idle_drivers[f'{driver_user.id}']['lat']},{idle_drivers[f'{driver_user.id}']['lng']}",
-                   "destination": f"{jsn['from_lat']},{jsn['from_lng']}"}
-    response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers,
-                                params=querystring).json()
-    if response is None:
-        return Response(
-            {
-                'status': False,
-                'message': 'something went wrong while getting route details from start to destination locations'
-            }
-        )
-    price += ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
-    ride = Ride(
-        user=user,
-        driver=driver_user,
-        start_destination_lat=jsn['from_lat'],
-        start_destination_lng=jsn['from_lng'],
-        end_destination_lat=jsn['to_lat'],
-        end_destination_lng=jsn['to_lng'],
-        vehicle=vehicle,
-        price=price,
-        user_history=user,
-        driver_history=driver_user
-    )
-    try:
-        ride.save()
-    except IntegrityError as err:
-        ongoing_ride_for = str(err)[str(err).find(':  Key (')+8:str(err).find('_id)=(')]
-        return Response(
-            {
-                'status': False,
-                'message':
-                    'current user already has an ongoing ride, please cancel previous ride to start a new one!'
-                    if ongoing_ride_for == 'user' else
-                    'provided driver is already doing another ride, try again with another driver',
-                'driver_already_book': True if ongoing_ride_for == 'driver' else None,
-                'user_already_book': True if ongoing_ride_for == 'user' else None
-            }
-        )
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.send)(
-        idle_drivers[f'{driver_user.id}']['channel_name'],
-        {
-            'type': 'driver_selected',
-            'ride_id': ride.id
+    while True:
+        res = get_nearby_drivers(jsn['from_lat'], jsn['from_lng'], jsn['vehicle_type'])
+        if len(res['drivers']) == 0:
+            return Response(
+                {
+                    'status': False,
+                    'message': 'can not book a ride, there are zero drivers nearby for given vehicle_type'
+                }
+            )
+        if res['nearest_driver'] is None:
+            return Response(
+                {
+                    'status': False,
+                    'message': 'can not book a ride, there are no drivers nearby for given vehicle_type'
+                }
+            )
+        nearest_driver = res['nearest_driver']
+        driver_user = User.objects.filter(id=nearest_driver['user_id']).first()
+        if driver_user is None:
+            return Response(
+                {
+                    'status': False,
+                    'message': 'fetched driver account does not exists'
+                }
+            )
+        try:
+            driver = driver_user.driver
+        except User.driver.RelatedObjectDoesNotExist:
+            return Response(
+                {
+                    'status': False,
+                    'message': 'fetched driver account is not a driver account'
+                }
+            )
+        if f'{driver_user.id}' not in idle_drivers:
+            continue
+        if driver.vehicle is None:
+            return Response(
+                {
+                    'status': False,
+                    'message': 'fetched driver account does not owns a vehicle yet'
+                }
+            )
+        vehicle = driver.vehicle
+        # getting price for customer pickup location to destination location travelling
+        querystring = {"origin": f"{jsn['from_lat']},{jsn['from_lng']}", "destination": f"{jsn['to_lat']},{jsn['to_lng']}"}
+        headers = {
+            "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
+            "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
         }
-    )
-    return Response(
-        {
-            'state': True,
-            'message': 'Ride successfully booked!',
-            'ride': ride.id
-        }
-    )
+        response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers,
+                                    params=querystring).json()
+        if response is None:
+            return Response(
+                {
+                    'status': False,
+                    'message': 'something went wrong while getting route details from start to destination locations'
+                }
+            )
+        price = ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
+        # getting price for driver idle location to customer pickup location travelling
+        querystring = {"origin": f"{idle_drivers[f'{driver_user.id}']['lat']},{idle_drivers[f'{driver_user.id}']['lng']}",
+                       "destination": f"{jsn['from_lat']},{jsn['from_lng']}"}
+        response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers,
+                                    params=querystring).json()
+        if response is None:
+            return Response(
+                {
+                    'status': False,
+                    'message': 'something went wrong while getting route details from start to destination locations'
+                }
+            )
+        price += ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
+        ride = Ride(
+            user=user,
+            driver=driver_user,
+            start_destination_lat=jsn['from_lat'],
+            start_destination_lng=jsn['from_lng'],
+            end_destination_lat=jsn['to_lat'],
+            end_destination_lng=jsn['to_lng'],
+            vehicle=vehicle,
+            price=price,
+            user_history=user,
+            driver_history=driver_user
+        )
+        try:
+            ride.save()
+        except IntegrityError as err:
+            print(err)
+            ongoing_ride_for = str(err)[str(err).find(':  Key (')+8:str(err).find('_id)=(')]
+            print('[+] ongoing_ride_for:')
+            print(ongoing_ride_for)
+            # return Response(
+            #     {
+            #         'status': False,
+            #         'message':
+            #             'current user already has an ongoing ride, please cancel previous ride to start a new one!'
+            #             if ongoing_ride_for == 'user' else
+            #             'provided driver is already doing another ride, try again with another driver',
+            #         'driver_already_book': True if ongoing_ride_for == 'driver' else None,
+            #         'user_already_book': True if ongoing_ride_for == 'user' else None
+            #     }
+            # )
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.send)(
+                idle_drivers[f'{driver_user.id}']['channel_name'],
+                {'type': 'driver_ride_ongoing'}
+            )
+            del idle_drivers[f'{nearest_driver["user_id"]}']
+            continue
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.send)(
+            idle_drivers[f'{driver_user.id}']['channel_name'],
+            {
+                'type': 'driver_selected',
+                'ride_id': ride.id
+            }
+        )
+        return Response(
+            {
+                'status': True,
+                'message': 'Ride successfully booked!',
+                'ride': ride.id
+            }
+        )
 
 
 @extend_schema(
@@ -176,7 +200,7 @@ def cancel_ride(request):
                 'message': 'only customer can cancel a ride'
             }
         )
-    jsn = request.jsn
+    jsn = request.data
     if 'ride_id' not in jsn:
         return Response(
             {
@@ -184,7 +208,7 @@ def cancel_ride(request):
                 'message': 'missing ride_id in request parameter'
             }
         )
-    ride = Ride.objects.filter(id=jsn['ride_id'])
+    ride = Ride.objects.filter(id=jsn['ride_id']).first()
     if ride is None:
         return Response(
             {
@@ -198,7 +222,7 @@ def cancel_ride(request):
     ride.save()
     return Response(
         {
-            'status': False,
+            'status': True,
             'message': 'ride has been cancelled'
         }
     )
