@@ -12,6 +12,7 @@ DEBUG = True
 blackListedTokens = set()
 idle_drivers = {}
 ride_otps = {}
+cancelled_ride = {}
 
 ALLOWED_HOSTS = [
     '127.0.0.1',

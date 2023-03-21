@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from ride.serializers import UserRideResponse, BookRideRequest, BookRideResponse, \
     CancleRideRequest, GenerateRideOTPRequest, GenerateRideOTPResponse, \
     VerifyRideOTPRequest, GetRideHistoryResponse
-from uberClone.settings import idle_drivers, ride_otps
+from uberClone.settings import idle_drivers, ride_otps, cancelled_ride
 from user.decorators import check_blacklisted_token
 from user.models import User, Ride
 from user.serializers import RideSerializer, GeneralResponse
@@ -35,6 +35,8 @@ from user.utils import get_nearby_drivers, float_formatter
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def book_ride(request):
+    BASE_FARE = 50
+    COST_PER_SEC = 0.3
     user = request.user
     if user.account_type == User.AccountType.DRIVER:
         return Response(
@@ -110,7 +112,7 @@ def book_ride(request):
                     'message': 'something went wrong while getting route details from start to destination locations'
                 }
             )
-        price = ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
+        price = ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration'])
         # getting price for driver idle location to customer pickup location travelling
         querystring = {"origin": f"{float_formatter(idle_drivers[f'{driver_user.id}']['lat'])},{float_formatter(idle_drivers[f'{driver_user.id}']['lng'])}",
                        "destination": f"{float_formatter(jsn['from_lat'])},{float_formatter(jsn['from_lng'])}"}
@@ -123,7 +125,7 @@ def book_ride(request):
                     'message': 'something went wrong while getting route details from start to destination locations'
                 }
             )
-        price += ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
+        price += BASE_FARE + ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration'])
         ride = Ride(
             user=user,
             driver=driver_user,
@@ -215,6 +217,7 @@ def cancel_ride(request):
     ride.user = None
     ride.driver = None
     ride.save()
+    cancelled_ride[f'{jsn["ride_id"]}'] = True
     return Response(
         {
             'status': True,

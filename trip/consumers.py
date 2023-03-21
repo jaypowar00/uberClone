@@ -5,16 +5,37 @@ import random
 from datetime import timedelta, datetime
 import geopy.distance
 import requests
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from trip.consumer_models import MockDriverConnectEventResult, MockDriverInitiateEventResult, \
     MockDriverReadyToPickupEventResult, MockDriverInProgressEventResult, MockDriverIncomingInitiateEvent, \
     MockDriverChangeSpeedEvent, Events, BroadcastDriverLiveLocationEvent, BroadcastDriverLiveLocationEventResult, \
     IdleDriverConnectEventResult, MockDriverOngoingInitiateEvent, CustomerPickedUpOtpEvent, \
-    CustomerPickedUpOtpEventResult, DriverSelectedForRideResult
-from uberClone.settings import idle_drivers, ride_otps
+    CustomerPickedUpOtpEventResult, DriverSelectedForRideResult, RideCancelledEventResult
+from uberClone.settings import idle_drivers, ride_otps, cancelled_ride
 from user.models import Ride, Vehicle
 from user.utils import float_formatter
+
+
+@database_sync_to_async
+def change_ride_state(ride_id, state: Ride.State):
+    ride = Ride.objects.filter(id=ride_id).first()
+    if ride:
+        ride.state = state
+        if state in [Ride.State.FINISHED, Ride.State.CANCELLED]:
+            ride.user = None
+            ride.driver = None
+        ride.save()
+
+
+@database_sync_to_async
+def get_ride_state(ride_id):
+    ride = Ride.objects.filter(id=ride_id).first()
+    if ride:
+        return ride.state
+    print('[+] no ride found to get ride state!')
+    return Ride.State.DRIVER_INCOMING
 
 
 class LiveLocationConsumer(AsyncWebsocketConsumer):
@@ -77,7 +98,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
         mockDriverConnectEventResult = MockDriverConnectEventResult(
             message=f'user:{event["name"]} {"just joined" if joined else "left"} live location preview for ride({self.scope["ride"]["id"]})',
             route=route if joined and response else {},
-            state=self.scope["ride"]["state"]
+            state=await get_ride_state(self.scope['ride']['id'])
         )
         await self.send(text_data=json.dumps(mockDriverConnectEventResult.to_json()))
 
@@ -135,10 +156,16 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                 customer_loc={'lat': self.scope['ride']['loc']['from_lat'], 'lng': self.scope['ride']['loc']['from_lng']},
                 total_cords=len(self.var_coordinates),
                 route=self.var_coordinates,
-                state=self.scope['ride']['state']
+                state=await get_ride_state(self.scope['ride']['id'])
             )
             await self.send(text_data=json.dumps(mockDriverInitiateEventResult.to_json()))
             while True:
+                if f'{self.scope["ride"]["id"]}' in cancelled_ride:
+                    del cancelled_ride[f'{self.scope["ride"]["id"]}']
+                    rideCancelledEventResult = RideCancelledEventResult()
+                    await self.send(text_data=json.dumps(rideCancelledEventResult.to_json()))
+                    await self.close()
+                    return
                 await asyncio.sleep(self.mps_sleep)
                 self.current_distance += self.mps * self.mps_speed
                 if (self.distances_between_all_geometry_pairs[self.current_index-1].meters + self.current_sent_distance) <= self.current_distance:
@@ -150,6 +177,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                                 driver_loc=self.var_coordinates[self.current_index],
                                 state=Ride.State.PICKUP_READY
                             )
+                            await change_ride_state(self.scope['ride']['id'], Ride.State.PICKUP_READY)
                         else:
                             print(f'[+] 0 =================== \n [+] self.current_index {self.current_index} (state: {Ride.State.FINISHED})')
                             mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
@@ -157,10 +185,14 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                                 state=Ride.State.FINISHED
                             )
                         await self.send(text_data=json.dumps(mockDriverReadyToPickupEventResult.to_json()))
+                        await change_ride_state(self.scope['ride']['id'], Ride.State.FINISHED)
                         break
                     else:
                         print(f'[+] 1 =================== \n [+] self.current_index {self.current_index}')
-                        mockDriverInProgressEventResult = MockDriverInProgressEventResult(driver_loc=self.var_coordinates[self.current_index])
+                        if event['event'] == Events.MockDriverIncomingInitiateEvent.value:
+                            mockDriverInProgressEventResult = MockDriverInProgressEventResult(driver_loc=self.var_coordinates[self.current_index], state=Ride.State.DRIVER_INCOMING)
+                        else:
+                            mockDriverInProgressEventResult = MockDriverInProgressEventResult(driver_loc=self.var_coordinates[self.current_index], state=Ride.State.ONGOING)
                         await self.send(text_data=json.dumps(mockDriverInProgressEventResult.to_json()))
                     print(f"{f'index: {self.current_index}' : <8} | {f'distance_pop: {self.distances_between_all_geometry_pairs[self.current_index-1].meters}': <33} | {f'distance_sent: {self.current_sent_distance}': <33} | {f'distance_travelled: {self.current_distance}': <33}")
                     self.current_index += 1
@@ -173,6 +205,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                                 driver_loc=self.var_coordinates[self.current_index],
                                 state=Ride.State.PICKUP_READY
                             )
+                            await change_ride_state(self.scope['ride']['id'], Ride.State.PICKUP_READY)
                         else:
                             print(f'[+] 2 =================== \n [+] self.current_index {self.current_index} (state: {Ride.State.FINISHED})')
                             mockDriverReadyToPickupEventResult = MockDriverReadyToPickupEventResult(
@@ -180,10 +213,14 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
                                 state=Ride.State.FINISHED
                             )
                         await self.send(text_data=json.dumps(mockDriverReadyToPickupEventResult.to_json()))
+                        await change_ride_state(self.scope['ride']['id'], Ride.State.FINISHED)
                         break
                     else:
                         print(f'[+] 3 =================== \n [+] self.current_index {self.current_index}')
-                        mockDriverInProgressEventResult = MockDriverInProgressEventResult(driver_loc=self.var_coordinates[self.current_index])
+                        if event['event'] == Events.MockDriverIncomingInitiateEvent.value:
+                            mockDriverInProgressEventResult = MockDriverInProgressEventResult(driver_loc=self.var_coordinates[self.current_index], state=Ride.State.DRIVER_INCOMING)
+                        else:
+                            mockDriverInProgressEventResult = MockDriverInProgressEventResult(driver_loc=self.var_coordinates[self.current_index], state=Ride.State.ONGOING)
                         await self.send(text_data=json.dumps(mockDriverInProgressEventResult.to_json()))
 
     async def disconnect(self, code):
@@ -278,6 +315,7 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
     async def liveshare_location(self, event):
         broadcastDriverLiveLocationEventResult = BroadcastDriverLiveLocationEventResult(event['location'])
         await self.send(text_data=json.dumps(broadcastDriverLiveLocationEventResult.to_json()))
+
 
 
 class IdleDriverConsumer(AsyncWebsocketConsumer):

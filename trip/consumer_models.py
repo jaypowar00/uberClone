@@ -20,6 +20,7 @@ class Events(Enum):
     BroadcastDriverLiveLocationEventResult = "BroadcastDriverLiveLocationEventResult"
     CustomerPickedUpOtpEventResult = "CustomerPickedUpOtpEventResult"
     DriverSelectedForRideResult = "DriverSelectedForRideResult"
+    RideCancelledEventResult = "RideCancelledEventResult"
 
 
 class MockDriverConnectEventResultResponse:
@@ -361,5 +362,15 @@ class DriverSelectedForRideResult:
     def to_json(self):
         return {
             'response': self.response.to_json(),
+            'event': self.event
+        }
+
+
+class RideCancelledEventResult:
+    def __init__(self):
+        self.event = Events.RideCancelledEventResult.value
+
+    def to_json(self):
+        return {
             'event': self.event
         }
