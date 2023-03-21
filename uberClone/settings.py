@@ -126,6 +126,7 @@ SESSION_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+    'https://uber-clone-v1.onrender.com'
 ]
 
 CORS_ORIGIN_WHITELIST = [
@@ -133,6 +134,7 @@ CORS_ORIGIN_WHITELIST = [
     'http://localhost:8000',
     'http://127.0.0.1',
     'http://127.0.0.1:8000',
+    'https://uber-clone-v1.onrender.com',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
