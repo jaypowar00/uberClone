@@ -266,11 +266,20 @@ def search_nearby_drivers(request):
     distances = [geopy.distance.distance([jsn['lat'], jsn['lng']], [point['lat'], point['lng']]).meters for point in nearby_drivers.to_dict('records')]
     distances = {k: v for k, v in enumerate(distances)}
     distances = dict(sorted(distances.items(), key=lambda item: item[1]))
+    if len(list(distances.keys()))>0:
+        return Response(
+            {
+                'status': True,
+                'drivers': nearby_drivers.to_dict('records'),
+                'nearest_driver': nearby_drivers.to_dict('records')[list(distances.keys())[0]]
+            }
+        )
     return Response(
         {
             'status': True,
             'drivers': nearby_drivers.to_dict('records'),
-            'nearest_driver': nearby_drivers.to_dict('records')[list(distances.keys())[0]]
+            'nearest_driver': None
         }
     )
+
 
