@@ -14,6 +14,7 @@ from trip.consumer_models import MockDriverConnectEventResult, MockDriverInitiat
     CustomerPickedUpOtpEventResult, DriverSelectedForRideResult
 from uberClone.settings import idle_drivers, ride_otps
 from user.models import Ride, Vehicle
+from user.utils import float_formatter
 
 
 class LiveLocationConsumer(AsyncWebsocketConsumer):
@@ -65,14 +66,14 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             return
         joined = event['joined']
         # ride_id = self.scope['path'].split('/')[-2]
-        querystring = {"origin": f"{self.scope['ride']['loc']['from_lat']},{self.scope['ride']['loc']['from_lng']}", "destination": f"{self.scope['ride']['loc']['to_lat']},{self.scope['ride']['loc']['to_lng']}"}
+        querystring = {"origin": f"{float_formatter(self.scope['ride']['loc']['from_lat'])},{float_formatter(self.scope['ride']['loc']['from_lng'])}", "destination": f"{float_formatter(self.scope['ride']['loc']['to_lat'])},{float_formatter(self.scope['ride']['loc']['to_lng'])}"}
         headers = {
             "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
             "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
         }
         response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers, params=querystring).json()
         route = response['route']
-        route['geometry']['coordinates'] = [{'lat': coordinate[0], 'lng': coordinate[1]} for coordinate in response['route']['geometry']['coordinates']]
+        route['geometry']['coordinates'] = [{'lat': float_formatter(coordinate[0]), 'lng': float_formatter(coordinate[1])} for coordinate in response['route']['geometry']['coordinates']]
         mockDriverConnectEventResult = MockDriverConnectEventResult(
             message=f'user:{event["name"]} {"just joined" if joined else "left"} live location preview for ride({self.scope["ride"]["id"]})',
             route=route if joined and response else {},
@@ -87,8 +88,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             max_radius = 500.0
             offset = 10 ** (math.log10(max_radius/1.11)-5)
             if event['location']:
-                from_mock_lat = event['location']['lat']
-                from_mock_lon = event['location']['lng']
+                from_mock_lat = float_formatter(event['location']['lat'])
+                from_mock_lon = float_formatter(event['location']['lng'])
             else:
                 from_mock_lat = self.scope['ride']['loc']['from_lat'] + random.sample([1, -1], 1)[0] * offset
                 from_mock_lon = self.scope['ride']['loc']['from_lng'] + random.sample([1, -1], 1)[0] * offset
@@ -98,8 +99,8 @@ class LiveLocationConsumer(AsyncWebsocketConsumer):
             }
         else:
             if event['location']:
-                from_mock_lat = event['location']['lat']
-                from_mock_lon = event['location']['lng']
+                from_mock_lat = float_formatter(event['location']['lat'])
+                from_mock_lon = float_formatter(event['location']['lng'])
             else:
                 from_mock_lat = self.scope['ride']['loc']['from_lat']
                 from_mock_lon = self.scope['ride']['loc']['from_lng']

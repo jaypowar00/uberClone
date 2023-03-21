@@ -1,4 +1,3 @@
-import geopy.distance
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -6,14 +5,10 @@ from rest_framework.decorators import permission_classes, api_view
 from driver.serializers import AddVehicleRequest, VehicleDetailsRequest, \
     UpdateVehicleDetailsRequest, NearbyIdleDriversRequest, NearbyIdleDriversResponse, \
     VehicleDetailsResponse
-from uberClone.settings import idle_drivers
 from user.models import Vehicle, User
 from user.decorators import check_blacklisted_token
 from user.serializers import VehicleSerializer, GeneralResponse
-import pandas as pd
-import geopandas as gpd
-
-from user.utils import get_nearby_drivers
+from user.utils import get_nearby_drivers, float_formatter
 
 
 @extend_schema(
@@ -234,7 +229,7 @@ def search_nearby_drivers(request):
                 'message': 'missing some parameters in request (required data: lat, lng, vehicle_type)'
             }
         )
-    res = get_nearby_drivers(jsn['lat'], jsn['lng'], jsn['vehicle_type'])
+    res = get_nearby_drivers(float_formatter(jsn['lat']), float_formatter(jsn['lng']), jsn['vehicle_type'])
     if len(res["drivers"]) == 0:
         return Response(
             {

@@ -11,7 +11,6 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-
 from ride.serializers import UserRideResponse, BookRideRequest, BookRideResponse, \
     CancleRideRequest, GenerateRideOTPRequest, GenerateRideOTPResponse, \
     VerifyRideOTPRequest, GetRideHistoryResponse
@@ -20,8 +19,7 @@ from user.decorators import check_blacklisted_token
 from user.models import User, Ride
 from user.serializers import RideSerializer, GeneralResponse
 from django.db.models import Q
-
-from user.utils import get_nearby_drivers
+from user.utils import get_nearby_drivers, float_formatter
 
 
 @extend_schema(
@@ -54,7 +52,7 @@ def book_ride(request):
             }
         )
     while True:
-        res = get_nearby_drivers(jsn['from_lat'], jsn['from_lng'], jsn['vehicle_type'])
+        res = get_nearby_drivers(float_formatter(jsn['from_lat']), float_formatter(jsn['from_lng']), jsn['vehicle_type'])
         if len(res['drivers']) == 0:
             return Response(
                 {
@@ -98,7 +96,7 @@ def book_ride(request):
             )
         vehicle = driver.vehicle
         # getting price for customer pickup location to destination location travelling
-        querystring = {"origin": f"{jsn['from_lat']},{jsn['from_lng']}", "destination": f"{jsn['to_lat']},{jsn['to_lng']}"}
+        querystring = {"origin": f"{float_formatter(jsn['from_lat'])},{float_formatter(jsn['from_lng'])}", "destination": f"{float_formatter(jsn['to_lat'])},{float_formatter(jsn['to_lng'])}"}
         headers = {
             "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
             "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
@@ -114,8 +112,8 @@ def book_ride(request):
             )
         price = ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage
         # getting price for driver idle location to customer pickup location travelling
-        querystring = {"origin": f"{idle_drivers[f'{driver_user.id}']['lat']},{idle_drivers[f'{driver_user.id}']['lng']}",
-                       "destination": f"{jsn['from_lat']},{jsn['from_lng']}"}
+        querystring = {"origin": f"{float_formatter(idle_drivers[f'{driver_user.id}']['lat'])},{float_formatter(idle_drivers[f'{driver_user.id}']['lng'])}",
+                       "destination": f"{float_formatter(jsn['from_lat'])},{float_formatter(jsn['from_lng'])}"}
         response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers,
                                     params=querystring).json()
         if response is None:
@@ -129,10 +127,10 @@ def book_ride(request):
         ride = Ride(
             user=user,
             driver=driver_user,
-            start_destination_lat=jsn['from_lat'],
-            start_destination_lng=jsn['from_lng'],
-            end_destination_lat=jsn['to_lat'],
-            end_destination_lng=jsn['to_lng'],
+            start_destination_lat=float_formatter(jsn['from_lat']),
+            start_destination_lng=float_formatter(jsn['from_lng']),
+            end_destination_lat=float_formatter(jsn['to_lat']),
+            end_destination_lng=float_formatter(jsn['to_lng']),
             vehicle=vehicle,
             price=price,
             user_history=user,
@@ -145,17 +143,14 @@ def book_ride(request):
             ongoing_ride_for = str(err)[str(err).find(':  Key (')+8:str(err).find('_id)=(')]
             print('[+] ongoing_ride_for:')
             print(ongoing_ride_for)
-            # return Response(
-            #     {
-            #         'status': False,
-            #         'message':
-            #             'current user already has an ongoing ride, please cancel previous ride to start a new one!'
-            #             if ongoing_ride_for == 'user' else
-            #             'provided driver is already doing another ride, try again with another driver',
-            #         'driver_already_book': True if ongoing_ride_for == 'driver' else None,
-            #         'user_already_book': True if ongoing_ride_for == 'user' else None
-            #     }
-            # )
+            if ongoing_ride_for == 'user':
+                return Response(
+                    {
+                        'status': False,
+                        'message': 'current user already has an ongoing ride, please cancel previous ride to start a new one!',
+                        'ride': Ride.objects.filter(user=user).first().id
+                    }
+                )
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.send)(
                 idle_drivers[f'{driver_user.id}']['channel_name'],

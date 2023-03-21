@@ -81,3 +81,7 @@ def get_nearby_drivers(lat, lng, vehicle_type):
         'drivers': nearby_drivers.to_dict('records'),
         'nearest_driver': None
     }
+
+
+def float_formatter(number):
+    return round(number, 6)
