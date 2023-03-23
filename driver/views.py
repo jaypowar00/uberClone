@@ -232,7 +232,7 @@ def search_nearby_drivers(request):
                 'message': 'missing some parameters in request (required data: lat, lng, vehicle_type)'
             }
         )
-    if 'test' in jsn:
+    if 'test' in jsn and jsn['test']:
         drivers = User.objects.filter(account_type=User.AccountType.DRIVER)[:2]
         for driver_user in drivers:
             digits = "0123456789"

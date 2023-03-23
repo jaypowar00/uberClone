@@ -35,6 +35,7 @@ class NearbyIdleDriversRequest(serializers.Serializer):
     lat = serializers.FloatField()
     lng = serializers.FloatField()
     vehicle_type = serializers.ChoiceField(choices=Vehicle.Type.choices)
+    test = serializers.BooleanField(default=None, required=False, allow_null=True)
 
 
 class DriverGeneralSerializer(serializers.Serializer):
