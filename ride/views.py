@@ -36,7 +36,7 @@ from user.utils import get_nearby_drivers, float_formatter
 @check_blacklisted_token
 def book_ride(request):
     BASE_FARE = 50
-    COST_PER_SEC = 0.3
+    COST_PER_SEC = 0.1
     user = request.user
     if user.account_type == User.AccountType.DRIVER:
         return Response(
