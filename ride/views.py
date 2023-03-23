@@ -153,21 +153,23 @@ def book_ride(request):
                         'ride': Ride.objects.filter(user=user).first().id
                     }
                 )
+            if idle_drivers[f'{driver_user.id}']['channel_name']:
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.send)(
+                    idle_drivers[f'{driver_user.id}']['channel_name'],
+                    {'type': 'driver_ride_ongoing'}
+                )
+            del idle_drivers[f'{driver_user.id}']
+            continue
+        if idle_drivers[f'{driver_user.id}']['channel_name']:
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.send)(
                 idle_drivers[f'{driver_user.id}']['channel_name'],
-                {'type': 'driver_ride_ongoing'}
+                {
+                    'type': 'driver_selected',
+                    'ride_id': ride.id
+                }
             )
-            del idle_drivers[f'{nearest_driver["user_id"]}']
-            continue
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.send)(
-            idle_drivers[f'{driver_user.id}']['channel_name'],
-            {
-                'type': 'driver_selected',
-                'ride_id': ride.id
-            }
-        )
         return Response(
             {
                 'status': True,

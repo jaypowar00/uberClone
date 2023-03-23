@@ -1,3 +1,5 @@
+import math
+import random
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -5,7 +7,8 @@ from rest_framework.decorators import permission_classes, api_view
 from driver.serializers import AddVehicleRequest, VehicleDetailsRequest, \
     UpdateVehicleDetailsRequest, NearbyIdleDriversRequest, NearbyIdleDriversResponse, \
     VehicleDetailsResponse
-from user.models import Vehicle, User
+from uberClone.settings import idle_drivers, cancelled_ride
+from user.models import Vehicle, User, Ride
 from user.decorators import check_blacklisted_token
 from user.serializers import VehicleSerializer, GeneralResponse
 from user.utils import get_nearby_drivers, float_formatter
@@ -229,6 +232,39 @@ def search_nearby_drivers(request):
                 'message': 'missing some parameters in request (required data: lat, lng, vehicle_type)'
             }
         )
+    if 'test' in jsn:
+        drivers = User.objects.filter(account_type=User.AccountType.DRIVER)[:2]
+        for driver_user in drivers:
+            digits = "0123456789"
+            if driver_user.driver.vehicle is None:
+                number = ''.join([digits[math.floor(random.random() * 10)] for _ in range(4)])
+                new_vehicle = Vehicle(
+                    vehicle_number=f"MH 09 {number}",
+                    seat_capacity=4,
+                    mileage=random.randint(19, 22),
+                    vehicle_type=jsn['vehicle_type']
+                )
+                new_vehicle.save()
+                driver_user.driver.vehicle = new_vehicle
+                driver_user.driver.save()
+            ride = Ride.objects.filter(driver=driver_user.id).first()
+            if ride:
+                if ride.state not in [Ride.State.CANCELLED, Ride.State.FINISHED]:
+                    cancelled_ride[f'{ride.id}'] = True
+                ride.state = Ride.State.CANCELLED
+                ride.user = None
+                ride.driver = None
+                ride.save()
+            loc = {
+                'lat': float_formatter(jsn['lat']+float_formatter(random.uniform(0.004500, 0.009377))),
+                'lng': float_formatter(jsn['lng']+float_formatter(random.uniform(0.004500, 0.009377))),
+                'user_id': driver_user.id,
+                'vehicle_type': driver_user.driver.vehicle.vehicle_type,
+                'vehicle_number': driver_user.driver.vehicle.vehicle_number,
+                'seat_capacity': driver_user.driver.vehicle.seat_capacity,
+                'channel_name': False
+            }
+            idle_drivers[f'{driver_user.id}'] = loc
     res = get_nearby_drivers(float_formatter(jsn['lat']), float_formatter(jsn['lng']), jsn['vehicle_type'])
     if len(res["drivers"]) == 0:
         return Response(
