@@ -256,8 +256,8 @@ def search_nearby_drivers(request):
                 ride.driver = None
                 ride.save()
             loc = {
-                'lat': float_formatter(jsn['lat']+float_formatter(random.uniform(0.004500, 0.009377))),
-                'lng': float_formatter(jsn['lng']+float_formatter(random.uniform(0.004500, 0.009377))),
+                'lat': float_formatter(jsn['lat']+(float_formatter(random.uniform(0.004, 0.013)) * random.choice([1, -1]))),
+                'lng': float_formatter(jsn['lng']+(float_formatter(random.uniform(0.004, 0.013)) * random.choice([1, -1]))),
                 'user_id': driver_user.id,
                 'vehicle_type': driver_user.driver.vehicle.vehicle_type,
                 'vehicle_number': driver_user.driver.vehicle.vehicle_number,
