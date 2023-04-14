@@ -46,6 +46,10 @@ def get_trip_locations(request):
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def get_location_path(request):
+    BASE_FARE = 50
+    COST_PER_SEC = 0.1
+    LOW_MILEAGE = 40
+    HIGH_MILEAGE = 17
     if not (request.data.get('from_lat') and request.data.get('from_lng')):
         return Response(
             {
@@ -85,9 +89,14 @@ def get_location_path(request):
 
     response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers, params=querystring).json()
     response['route']['geometry']['coordinates'] = [{'lat': float_formatter(coordinate[0]), 'lng': float_formatter(coordinate[1])} for coordinate in response['route']['geometry']['coordinates']]
+    low_price = float_formatter(BASE_FARE + ((response['route']['distance'] / 1000.0) * 105) / LOW_MILEAGE + (COST_PER_SEC * response['route']['duration']), 2)
+    high_price = float_formatter(BASE_FARE + ((response['route']['distance'] / 1000.0) * 105) / HIGH_MILEAGE + (COST_PER_SEC * response['route']['duration']), 2)
     return Response(
         {
             'status': True,
-            'route': response['route'] if response else {}
+            'route': response['route'] if response else {},
+            'low_price': low_price,
+            'high_price': high_price,
+            'duration': response['route']['duration']
         }
     )
