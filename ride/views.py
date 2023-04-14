@@ -478,3 +478,17 @@ def pay_ride(request):
     payment.save()
     ride.payment = payment
     ride.save()
+    if jsn['status']:
+        return Response(
+            {
+                'status': True,
+                'message': 'payment successful!'
+            }
+        )
+    else:
+        return Response(
+            {
+                'status': False,
+                'message': 'payment failed!'
+            }
+        )
