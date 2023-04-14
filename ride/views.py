@@ -1,6 +1,7 @@
 import math
 import os
 import random
+import uuid
 from datetime import timedelta, datetime
 import requests
 from asgiref.sync import async_to_sync
@@ -13,10 +14,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from ride.serializers import UserRideResponse, BookRideRequest, BookRideResponse, \
     CancleRideRequest, GenerateRideOTPRequest, GenerateRideOTPResponse, \
-    VerifyRideOTPRequest, GetRideHistoryResponse
+    VerifyRideOTPRequest, GetRideHistoryResponse, PayRideRequest
 from uberClone.settings import idle_drivers, ride_otps, cancelled_ride
 from user.decorators import check_blacklisted_token
-from user.models import User, Ride
+from user.models import User, Ride, Payment
 from user.serializers import RideSerializer, GeneralResponse
 from django.db.models import Q
 from user.utils import get_nearby_drivers, float_formatter
@@ -125,7 +126,7 @@ def book_ride(request):
                     'message': 'something went wrong while getting route details from start to destination locations'
                 }
             )
-        price += BASE_FARE + ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration'])
+        price += float_formatter(BASE_FARE + ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
         ride = Ride(
             user=user,
             driver=driver_user,
@@ -150,7 +151,7 @@ def book_ride(request):
                     {
                         'status': False,
                         'message': 'current user already has an ongoing ride, please cancel previous ride to start a new one!',
-                        'ride': Ride.objects.filter(user=user).first().id
+                        'ride': Ride.objects.filter(user=user).first()
                     }
                 )
             if idle_drivers[f'{driver_user.id}']['channel_name']:
@@ -174,7 +175,7 @@ def book_ride(request):
             {
                 'status': True,
                 'message': 'Ride successfully booked!',
-                'ride': ride.id
+                'ride': ride
             }
         )
 
@@ -428,3 +429,52 @@ def get_ride(request):
             'ride': ride_ser
         }
     )
+
+
+@extend_schema(
+    description="do payment for a ride",
+    request=PayRideRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GeneralResponse
+        )
+    }
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@check_blacklisted_token
+def pay_ride(request):
+    user = request.user
+    if user.account_type == User.AccountType.DRIVER:
+        return Response(
+            {
+                'status': False,
+                'message': 'this feature is only for regular account types, not driver'
+            }
+        )
+    jsn = request.data
+    if not ('status' in jsn and 'ride_id' in jsn):
+        return Response(
+            {
+                'status': False,
+                'message': 'missing a field in the request body (required data: status, ride_id)'
+            }
+        )
+    ride = Ride.objects.filter(id=jsn['ride_id']).first()
+    if not ride:
+        return Response(
+            {
+                'status': False,
+                'message': 'the ride does not exists'
+            }
+        )
+    if ride.payment:
+        payment = ride.payment
+    else:
+        payment = Payment()
+    payment.transaction_id = str(uuid.uuid4())
+    payment.amount = ride.price
+    payment.status = payment.State.SUCCESS if jsn['status'] else payment.State.FAILED
+    payment.save()
+    ride.payment = payment
+    ride.save()
