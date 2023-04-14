@@ -83,5 +83,5 @@ def get_nearby_drivers(lat, lng, vehicle_type):
     }
 
 
-def float_formatter(number):
-    return round(number, 6)
+def float_formatter(number, decimals=6):
+    return round(number, decimals)
