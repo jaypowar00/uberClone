@@ -79,7 +79,7 @@ class Payment(models.Model):
         FAILED = 'f', 'failed'
     transaction_id = models.CharField(max_length=256)
     amount = models.FloatField()
-    date = models.DateField()
+    date = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=1, choices=State.choices)
 
 
