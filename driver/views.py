@@ -271,14 +271,15 @@ def search_nearby_drivers(request):
             {
                 'status': False,
                 'drivers': [],
-                'message': res['message']
+                'message': 'currently, no drivers are idle'
             }
         )
     return Response(
         {
             'status': True,
             'drivers': res['drivers'],
-            'nearest_driver': res['nearest_driver']
+            'nearest_driver': res['nearest_driver'],
+            'message': 'drivers fetched'
         }
     )
 
