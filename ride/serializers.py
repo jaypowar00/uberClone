@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 from user.models import Ride, Vehicle
 from user.serializers import GeneralResponse
@@ -16,8 +17,6 @@ class RideGeneralSerializer(serializers.Serializer):
     otp_verified = serializers.BooleanField()
     vehicle = serializers.IntegerField()
     payment = serializers.IntegerField(allow_null=True, required=False)
-    user_history = serializers.IntegerField()
-    driver_history = serializers.IntegerField()
 
 
 class UserRideResponse(GeneralResponse, RideGeneralSerializer):
@@ -33,7 +32,7 @@ class BookRideRequest(serializers.Serializer):
 
 
 class BookRideResponse(GeneralResponse):
-    ride = serializers.IntegerField(allow_null=True, required=False)
+    ride = RideGeneralSerializer()
 
 
 class CancleRideRequest(serializers.Serializer):
@@ -57,3 +56,8 @@ class VerifyRideOTPRequest(serializers.Serializer):
 class GetRideHistoryResponse(GeneralResponse):
     message = serializers.CharField(allow_null=True, required=False)
     rides = serializers.ListField(child=RideGeneralSerializer())
+
+
+class PayRideRequest(serializers.Serializer):
+    status = serializers.BooleanField()
+    ride_id = serializers.IntegerField()
