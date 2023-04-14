@@ -233,7 +233,8 @@ def search_nearby_drivers(request):
             }
         )
     if 'test' in jsn and jsn['test']:
-        drivers = User.objects.filter(account_type=User.AccountType.DRIVER)[:2]
+        drivers = User.objects.filter(account_type=User.AccountType.DRIVER,
+                                      driver__vehicle__vehicle_type__iexact=jsn['vehicle_type'])[:2]
         for driver_user in drivers:
             digits = "0123456789"
             if driver_user.driver.vehicle is None:
