@@ -171,11 +171,12 @@ def book_ride(request):
                     'ride_id': ride.id
                 }
             )
+        ride_ser = RideSerializer(ride).data
         return Response(
             {
                 'status': True,
                 'message': 'Ride successfully booked!',
-                'ride': ride
+                'ride': ride_ser
             }
         )
 
