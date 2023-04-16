@@ -176,7 +176,8 @@ def book_ride(request):
             {
                 'status': True,
                 'message': 'Ride successfully booked!',
-                'ride': ride_ser
+                'ride': ride.id,
+                'details': ride_ser,
             }
         )
 
