@@ -36,7 +36,9 @@ from user.utils import get_nearby_drivers, float_formatter
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def book_ride(request):
-    BASE_FARE = 50
+    CAR_BASE_FARE = 35
+    RIK_BASE_FARE = 25
+    BIK_BASE_FARE = 15
     COST_PER_SEC = 0.1
     user = request.user
     if user.account_type == User.AccountType.DRIVER:
@@ -126,7 +128,13 @@ def book_ride(request):
                     'message': 'something went wrong while getting route details from start to destination locations'
                 }
             )
-        price += float_formatter(BASE_FARE + ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+        price += float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+        if driver.vehicle.vehicle_type == driver.vehicle.Type.BIKE:
+            price += BIK_BASE_FARE
+        elif driver.vehicle.vehicle_type == driver.vehicle.Type.RIKSHAW:
+            price += RIK_BASE_FARE
+        else:
+            price += CAR_BASE_FARE
         ride = Ride(
             user=user,
             driver=driver_user,
