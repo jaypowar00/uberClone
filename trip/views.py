@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from trip.serializers import GetLocationPathRequest, GetLocationPathResponse, \
-    GetTripLocationsResponse
+    GetTripLocationsResponse, GetNearbyFamousLocationsRequest, GetNearbyFamousLocationsResponse
 from user.decorators import check_blacklisted_token
 from user.models import TripLocations
 from user.serializers import TripLocationsSerializer
@@ -100,3 +100,63 @@ def get_location_path(request):
             'duration': response['route']['duration']
         }
     )
+
+
+@extend_schema(
+    description="get nearby famous locations based on provided current lat,lng coordinates",
+    request=GetNearbyFamousLocationsRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GetNearbyFamousLocationsResponse
+        )
+    }
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@check_blacklisted_token
+def get_nearby_famous_locations(request):
+    if not (request.data.get('from_lat') and request.data.get('from_lng')):
+        return Response(
+            {
+                'status': False,
+                'message': 'Provide current(start) location!'
+            }
+        )
+    radius = 5000 if not request.data.get('radius') else int(request.data.get('radius'))
+    from_lat = float_formatter(request.data.get('from_lat'))
+    from_lng = float_formatter(request.data.get('from_lng'))
+    api_key = os.getenv('GEOAPIFY_API_KEY')
+    querystring = {
+        "filter": f"circle:{from_lng},{from_lat},{radius}",
+        "bias": f"proximity:{from_lng},{from_lat}",
+        "limit": "50",
+        "categories": "tourism,accommodation,healthcare",
+        "conditions": "named",
+        "apiKey": f"{api_key}"
+    }
+    url = f"{os.getenv('GEOAPIFY_API_ENDPOINT')}"
+    print('[+] url:')
+    print(url)
+    response = requests.request("GET", url, params=querystring).json()
+    if 'statusCode' in response:
+        return Response(
+            {
+                'status': False,
+                'message': f"Server issue: {response['message']}"
+            }
+        )
+    del_keys = ['categories', 'details', 'datasource']
+    for location in response['features']:
+        location['properties']['osm_id'] = location['properties']['datasource']['raw']['osm_id']
+        location['category'] = location['properties']['categories'][0]
+        del location['type']
+        del location['geometry']
+        for del_key in del_keys:
+            del location['properties'][del_key]
+    return Response(
+        {
+            'status': True,
+            'locations': response['features']
+        }
+    )
+

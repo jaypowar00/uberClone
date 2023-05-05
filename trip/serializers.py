@@ -75,3 +75,39 @@ class GetTripLocationsResponse(GeneralResponse):
     message = serializers.CharField(allow_null=True, required=False)
     locations = serializers.ListField(child=Location_GetTripLocationsResponse(), allow_null=True,
                                       required=False)
+
+
+class GetNearbyFamousLocationsRequest(GetLocationPathRequest):
+    radius = serializers.IntegerField(required=False)
+
+
+class Properties_Location_GetNearbyFamousLocationsResponse(serializers.Serializer):
+    name = serializers.CharField()
+    country = serializers.CharField()
+    country_code = serializers.CharField()
+    state = serializers.CharField()
+    county = serializers.CharField()
+    city = serializers.CharField()
+    postcode = serializers.CharField()
+    street = serializers.CharField()
+    lon = serializers.FloatField()
+    lat = serializers.FloatField()
+    state_code = serializers.CharField()
+    formatted = serializers.CharField()
+    address_line1 = serializers.CharField()
+    address_line2 = serializers.CharField()
+    distance = serializers.IntegerField()
+    place_id = serializers.CharField()
+    osm_id = serializers.IntegerField()
+    category = serializers.CharField()
+
+
+class Location_GetNearbyFamousLocationsResponse(serializers.Serializer):
+    properties = Properties_Location_GetNearbyFamousLocationsResponse()
+
+
+class GetNearbyFamousLocationsResponse(serializers.Serializer):
+    status = serializers.BooleanField()
+    message = serializers.CharField(allow_null=True, required=False)
+    locations = serializers.ListField(child=Location_GetNearbyFamousLocationsResponse(), allow_null=True,
+                                      required=False)
