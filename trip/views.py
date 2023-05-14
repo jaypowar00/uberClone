@@ -130,7 +130,7 @@ def get_nearby_famous_locations(request):
         "filter": f"circle:{from_lng},{from_lat},{radius}",
         "bias": f"proximity:{from_lng},{from_lat}",
         "limit": "50",
-        "categories": "tourism.attraction,building.historic,entertainment.water_park,entertainment.zoo,entertainment.aquarium,entertainment.planetarium,entertainment.activty_park,entertainment.theme_park,entertainment.museum,entertainment.culture",
+        "categories": "tourism.attraction,building.historic,entertainment.water_park,entertainment.zoo,entertainment.aquarium,entertainment.planetarium,entertainment.activity_park,entertainment.theme_park,entertainment.museum,entertainment.culture",
         "conditions": "named",
         "apiKey": f"{api_key}"
     }
