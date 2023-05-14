@@ -137,6 +137,24 @@ def book_ride(request):
             price += CAR_BASE_FARE
         from_location = jsn['from_location'][0:251]+"..." if len(jsn['from_location']) >= 255 else jsn['from_location']
         to_location = jsn['from_location'][0:251]+"..." if len(jsn['to_location']) >= 255 else jsn['to_location']
+        try:
+            old_ride = user.driver_ride
+            if old_ride:
+                old_ride.state = Ride.State.CANCELLED
+                old_ride.user = None
+                old_ride.driver = None
+                old_ride.save()
+        except ObjectDoesNotExist:
+            pass
+        try:
+            old_ride = user.user_ride
+            if old_ride:
+                old_ride.state = Ride.State.CANCELLED
+                old_ride.user = None
+                old_ride.driver = None
+                old_ride.save()
+        except ObjectDoesNotExist:
+            pass
         ride = Ride(
             user=user,
             driver=driver_user,

@@ -130,7 +130,7 @@ def get_nearby_famous_locations(request):
         "filter": f"circle:{from_lng},{from_lat},{radius}",
         "bias": f"proximity:{from_lng},{from_lat}",
         "limit": "50",
-        "categories": "tourism.attraction,building.historic,entertainment.water_park,healthcare.hospital,building.college",
+        "categories": "tourism.attraction,building.historic,entertainment.water_park,building.college",
         "conditions": "named",
         "apiKey": f"{api_key}"
     }
