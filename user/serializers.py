@@ -49,7 +49,7 @@ class TripLocationsSerializer(serializers.ModelSerializer):
 
 
 class RideSerializer(serializers.ModelSerializer):
-
+    vehicle = VehicleSerializer()
     class Meta:
         model = Ride
         fields = ["id", "start_destination_lat", "start_destination_lng", "end_destination_lat", "end_destination_lng",
