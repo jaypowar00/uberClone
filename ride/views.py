@@ -49,11 +49,11 @@ def book_ride(request):
             }
         )
     jsn = request.data
-    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'vehicle_type' in jsn):
+    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'vehicle_type' in jsn and 'from_location' and 'to_location' in jsn):
         return Response(
             {
                 'status': False,
-                'message': 'missing some fields in the request body (required data: from_lat, from_lng, to_lat, to_lng, vehicle_type)'
+                'message': 'missing some fields in the request body (required data: from_lat, from_lng, to_lat, to_lng, vehicle_type, to_location, from_location)'
             }
         )
     while True:
@@ -135,6 +135,8 @@ def book_ride(request):
             price += RIK_BASE_FARE
         else:
             price += CAR_BASE_FARE
+        from_location = jsn['from_location'][0:251]+"..." if len(jsn['from_location']) >= 255 else jsn['from_location']
+        to_location = jsn['from_location'][0:251]+"..." if len(jsn['to_location']) >= 255 else jsn['to_location']
         ride = Ride(
             user=user,
             driver=driver_user,
@@ -142,6 +144,8 @@ def book_ride(request):
             start_destination_lng=float_formatter(jsn['from_lng']),
             end_destination_lat=float_formatter(jsn['to_lat']),
             end_destination_lng=float_formatter(jsn['to_lng']),
+            from_location=from_location,
+            to_location=to_location,
             vehicle=vehicle,
             price=price,
             user_history=user,
@@ -369,7 +373,7 @@ def verify_otp(request):
 def get_ride_history(request):
     user = request.user
     if user.account_type == user.AccountType.REGULAR:
-        rides = user.user_ride_history.filter(~Q(state=Ride.State.STARTED))
+        rides = user.user_ride_history.filter(~Q(state=Ride.State.STARTED))[:10]
         if not rides:
             return Response(
                 {
