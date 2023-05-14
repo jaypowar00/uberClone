@@ -28,6 +28,8 @@ class BookRideRequest(serializers.Serializer):
     from_lng = serializers.FloatField()
     to_lat = serializers.FloatField()
     to_lng = serializers.FloatField()
+    from_location = serializers.CharField()
+    to_location = serializers.CharField()
     vehicle_type = serializers.ChoiceField(choices=Vehicle.Type.choices)
 
 
