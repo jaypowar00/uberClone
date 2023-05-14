@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
-from .models import User, TripLocations, Vehicle, Ride
+from .models import User, TripLocations, Vehicle, Ride, Payment
 import geocoder
 
 
@@ -48,8 +48,15 @@ class TripLocationsSerializer(serializers.ModelSerializer):
         }
 
 
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['transaction_id', 'amount', 'date', 'status']
+
+
 class RideSerializer(serializers.ModelSerializer):
     vehicle = VehicleSerializer()
+    payment = PaymentSerializer()
     class Meta:
         model = Ride
         fields = ["id", "start_destination_lat", "start_destination_lng", "end_destination_lat", "end_destination_lng",
