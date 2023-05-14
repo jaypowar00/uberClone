@@ -109,6 +109,8 @@ class Ride(models.Model):
     start_destination_lng = models.FloatField(default=None, null=True)
     end_destination_lat = models.FloatField(default=None, null=True)
     end_destination_lng = models.FloatField(default=None, null=True)
+    from_location = models.CharField(default=None, null=True, max_length=256)
+    to_location = models.CharField(default=None, null=True, max_length=256)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.DO_NOTHING)
     price = models.FloatField()
     state = models.CharField(max_length=1, choices=State.choices, default=State.STARTED)
