@@ -18,7 +18,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
     'uber-clone-v1.onrender.com',
-    'uber-clone-v1.up.railway.app'
+    'uber-clone-v1.up.railway.app',
+    'cab-app-api.up.railway.app'
 ]
 
 INSTALLED_APPS = [
@@ -129,7 +130,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'https://uber-clone-v1.onrender.com',
-    'https://uber-clone-v1.up.railway.app'
+    'https://uber-clone-v1.up.railway.app',
+    'https://cab-app-api.up.railway.app/'
 ]
 
 CORS_ORIGIN_WHITELIST = [
@@ -138,7 +140,8 @@ CORS_ORIGIN_WHITELIST = [
     'http://127.0.0.1',
     'http://127.0.0.1:8000',
     'https://uber-clone-v1.onrender.com',
-    'https://uber-clone-v1.up.railway.app'
+    'https://uber-clone-v1.up.railway.app',
+    'https://cab-app-api.up.railway.app'
 ]
 
 CORS_ALLOW_CREDENTIALS = True
