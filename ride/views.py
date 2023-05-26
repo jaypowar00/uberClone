@@ -115,20 +115,18 @@ def book_ride(request):
                     'message': 'something went wrong while getting route details from start to destination locations'
                 }
             )
-        price = ((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration'])
+        price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
         # getting price for driver idle location to customer pickup location travelling
-        querystring = {"origin": f"{float_formatter(idle_drivers[f'{driver_user.id}']['lat'])},{float_formatter(idle_drivers[f'{driver_user.id}']['lng'])}",
-                       "destination": f"{float_formatter(jsn['from_lat'])},{float_formatter(jsn['from_lng'])}"}
-        response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers,
-                                    params=querystring).json()
-        if response is None:
-            return Response(
-                {
-                    'status': False,
-                    'message': 'something went wrong while getting route details from start to destination locations'
-                }
-            )
-        price += float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+        # querystring = {"origin": f"{float_formatter(idle_drivers[f'{driver_user.id}']['lat'])},{float_formatter(idle_drivers[f'{driver_user.id}']['lng'])}", "destination": f"{float_formatter(jsn['from_lat'])},{float_formatter(jsn['from_lng'])}"}
+        # response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers, params=querystring).json()
+        # if response is None:
+        #     return Response(
+        #         {
+        #             'status': False,
+        #             'message': 'something went wrong while getting route details from start to destination locations'
+        #         }
+        #     )
+        # price += float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
         if driver.vehicle.vehicle_type == driver.vehicle.Type.BIKE:
             price += BIK_BASE_FARE
         elif driver.vehicle.vehicle_type == driver.vehicle.Type.RIKSHAW:
