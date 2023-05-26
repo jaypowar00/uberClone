@@ -158,3 +158,13 @@ class BookTripRequest(serializers.Serializer):
 class BookTripResponse(GeneralResponse):
     trip = serializers.IntegerField()
     details = TripGeneralSerializer()
+
+
+class GetTripHistoryResponse(GeneralResponse):
+    message = serializers.CharField(allow_null=True, required=False)
+    rides = serializers.ListField(child=TripGeneralSerializer())
+
+
+class PayTripRequest(serializers.Serializer):
+    status = serializers.BooleanField()
+    ride_id = serializers.IntegerField()

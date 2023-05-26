@@ -1,7 +1,7 @@
 import datetime
 import os
 import random
-
+import uuid
 import requests
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.decorators import api_view, permission_classes
@@ -9,10 +9,10 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from trip.serializers import GetLocationPathRequest, GetLocationPathResponse, \
     GetTripLocationsResponse, GetNearbyFamousLocationsRequest, GetNearbyFamousLocationsResponse, GetTripPriceRequest, \
-    GetTripPriceResponse, BookTripRequest, BookTripResponse
+    GetTripPriceResponse, BookTripRequest, BookTripResponse, GetTripHistoryResponse, PayTripRequest
 from user.decorators import check_blacklisted_token
-from user.models import TripLocations, User, Driver, BookedTrip
-from user.serializers import TripLocationsSerializer, BookedTripSerializer
+from user.models import TripLocations, User, Driver, BookedTrip, Payment
+from user.serializers import TripLocationsSerializer, BookedTripSerializer, GeneralResponse
 from user.utils import float_formatter
 
 
@@ -352,3 +352,109 @@ def get_trip_price(request):
             'bus_price': bus_price
         }
     )
+
+
+@extend_schema(
+    description="get logged-in customer/driver trip history",
+    responses={
+        200: OpenApiResponse(
+            response=GetTripHistoryResponse
+        )
+    }
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@check_blacklisted_token
+def get_trip_history(request):
+    user = request.user
+    if user.account_type == user.AccountType.REGULAR:
+        trips = user.user_ride_history.all()
+        if not trips:
+            return Response(
+                {
+                    'status': True,
+                    'message': 'no history for previous rides',
+                    'rides': []
+                }
+            )
+    else:
+        trips = user.driver_ride_history.all()
+        if not trips:
+            return Response(
+                {
+                    'status': True,
+                    'message': 'no history for previous rides',
+                    'rides': []
+                }
+            )
+    trips_serialized = BookedTripSerializer(trips, many=True).data
+    return Response(
+        {
+            'status': True,
+            'trips': trips_serialized
+        }
+    )
+
+
+@extend_schema(
+    description="do payment for a trip",
+    request=PayTripRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GeneralResponse
+        )
+    }
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@check_blacklisted_token
+def pay_trip(request):
+    user = request.user
+    if user.account_type == User.AccountType.DRIVER:
+        return Response(
+            {
+                'status': False,
+                'message': 'this feature is only for regular account types, not driver'
+            }
+        )
+    jsn = request.data
+    if not ('status' in jsn and 'trip_id' in jsn):
+        return Response(
+            {
+                'status': False,
+                'message': 'missing a field in the request body (required data: status, trip_id)'
+            }
+        )
+    trip = BookedTrip.objects.filter(id=jsn['trip_id']).first()
+    if not trip:
+        return Response(
+            {
+                'status': False,
+                'message': 'the ride does not exists'
+            }
+        )
+    if trip.payment:
+        payment = trip.payment
+    else:
+        payment = Payment()
+    payment.transaction_id = str(uuid.uuid4())
+    payment.amount = trip.price
+    payment.status = payment.State.SUCCESS if jsn['status'] else payment.State.FAILED
+    payment.save()
+    trip.payment = payment
+    trip.save()
+    if jsn['status']:
+        return Response(
+            {
+                'status': True,
+                'message': 'payment successful!'
+            }
+        )
+    else:
+        return Response(
+            {
+                'status': False,
+                'message': 'payment failed!'
+            }
+        )
+
