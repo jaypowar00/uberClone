@@ -31,6 +31,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    for_trip = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -91,7 +92,6 @@ class TripLocations(models.Model):
     description = models.CharField(max_length=128)
     lng = models.FloatField(null=True)
     lat = models.FloatField(null=True)
-    # objects = models.GeoManager()
 
 
 class Ride(models.Model):
