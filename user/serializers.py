@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
-from .models import User, TripLocations, Vehicle, Ride, Payment
+from .models import User, TripLocations, Vehicle, Ride, Payment, BookedTrip
 import geocoder
 
 
@@ -62,6 +62,16 @@ class RideSerializer(serializers.ModelSerializer):
         fields = ["id", "start_destination_lat", "start_destination_lng", "end_destination_lat", "end_destination_lng",
                   "from_location", "to_location", "price", "state", "otp_verified", "vehicle", "payment", "user_history",
                   "driver_history"]
+
+
+class BookedTripSerializer(serializers.ModelSerializer):
+    vehicle = VehicleSerializer()
+    payment = PaymentSerializer()
+    class Meta:
+        model = BookedTrip
+        fields = ["id", "start_destination_lat", "start_destination_lng", "end_destination_lat", "end_destination_lng",
+                  "from_location", "to_location", "pickup_time", "drop_time", "price", "state", "vehicle", "payment",
+                  "user_history", "driver_history"]
 
 
 class UserGeneralSerializer(serializers.Serializer):
