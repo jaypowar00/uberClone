@@ -1,14 +1,18 @@
+import datetime
 import os
+import random
+
 import requests
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from trip.serializers import GetLocationPathRequest, GetLocationPathResponse, \
-    GetTripLocationsResponse, GetNearbyFamousLocationsRequest, GetNearbyFamousLocationsResponse
+    GetTripLocationsResponse, GetNearbyFamousLocationsRequest, GetNearbyFamousLocationsResponse, GetTripPriceRequest, \
+    GetTripPriceResponse, BookTripRequest, BookTripResponse
 from user.decorators import check_blacklisted_token
-from user.models import TripLocations
-from user.serializers import TripLocationsSerializer
+from user.models import TripLocations, User, Driver, BookedTrip
+from user.serializers import TripLocationsSerializer, BookedTripSerializer
 from user.utils import float_formatter
 
 
@@ -160,3 +164,191 @@ def get_nearby_famous_locations(request):
         }
     )
 
+
+@extend_schema(
+    description="book a trip for customer",
+    request=BookTripRequest,
+    responses={
+        200: OpenApiResponse(
+            response=BookTripResponse
+        )
+    }
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@check_blacklisted_token
+def book_trip(request):
+    CAR_BASE_FARE = 20
+    BUS_BASE_FARE = 25
+    COST_PER_SEC = 0.1
+    user = request.user
+    if user.account_type == User.AccountType.DRIVER:
+        return Response(
+            {
+                'status': False,
+                'message': 'this feature is only for regular account types, not driver'
+            }
+        )
+    jsn = request.data
+    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn and 'vehicle_type' in jsn and 'from_location' and 'to_location' in jsn and 'pickup_time' in jsn):
+        return Response(
+            {
+                'status': False,
+                'message': 'missing some fields in the request body (required data: from_lat, from_lng, to_lat, to_lng, vehicle_type, to_location, from_location, pickup_time)'
+            }
+        )
+
+    driver_user: User = random.choice(list(User.objects.filter(for_trip=True, account_type='D', driver__vehicle__vehicle_type__iexact=jsn['vehicle_type']).all()))
+    try:
+        driver: Driver = driver_user.driver
+    except User.driver.RelatedObjectDoesNotExist:
+        return Response(
+            {
+                'status': False,
+                'message': 'fetched driver account is not a driver account'
+            }
+        )
+    if driver.vehicle is None:
+        return Response(
+            {
+                'status': False,
+                'message': 'fetched driver account does not owns a vehicle yet'
+            }
+        )
+    vehicle = driver.vehicle
+    # getting price for customer pickup location to destination location travelling
+    querystring = {"origin": f"{float_formatter(jsn['from_lat'])},{float_formatter(jsn['from_lng'])}", "destination": f"{float_formatter(jsn['to_lat'])},{float_formatter(jsn['to_lng'])}"}
+    headers = {
+        "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
+        "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
+    }
+    response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers,
+                                params=querystring).json()
+    if response is None:
+        return Response(
+            {
+                'status': False,
+                'message': 'something went wrong while getting route details from start to destination locations'
+            }
+        )
+    price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    if driver.vehicle.vehicle_type == driver.vehicle.Type.BUS:
+        price += BUS_BASE_FARE
+    else:
+        price += CAR_BASE_FARE
+    from_location = jsn['from_location'][0:251]+"..." if len(jsn['from_location']) >= 255 else jsn['from_location']
+    to_location = jsn['from_location'][0:251]+"..." if len(jsn['to_location']) >= 255 else jsn['to_location']
+    pickuptime = datetime.datetime.strptime(jsn["pickup_time"], "%d/%m/%Y %H:%S")
+    droptime = pickuptime + datetime.timedelta(seconds=response['route']['duration'])
+    trip = BookedTrip(
+        start_destination_lat=float_formatter(jsn['from_lat']),
+        start_destination_lng=float_formatter(jsn['from_lng']),
+        end_destination_lat=float_formatter(jsn['to_lat']),
+        end_destination_lng=float_formatter(jsn['to_lng']),
+        from_location=from_location,
+        to_location=to_location,
+        vehicle=vehicle,
+        price=price,
+        pickup_time=pickuptime,
+        drop_time=droptime,
+        user_history=user,
+        driver_history=driver_user
+    )
+    trip.save()
+    trip_ser = BookedTripSerializer(trip).data
+    return Response(
+        {
+            'status': True,
+            'message': 'Trip successfully booked!',
+            'trip': trip.id,
+            'details': trip_ser,
+        }
+    )
+
+
+@extend_schema(
+    description="get approx. travel price based on provided from-to lat,lng coordinates",
+    request=GetTripPriceRequest,
+    responses={
+        200: OpenApiResponse(
+            response=GetTripPriceResponse
+        )
+    }
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@check_blacklisted_token
+def get_trip_price(request):
+    CAR_BASE_FARE = 20
+    BUS_BASE_FARE = 18
+    COST_PER_SEC = 0.1
+    jsn = request.data
+    if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn):
+        return Response(
+            {
+                'status': False,
+                'message': 'missing some fields in the request body (required data: from_lat, from_lng, to_lat, to_lng)'
+            }
+        )
+    car_driver_user = random.choice(list(User.objects.filter(for_trip=True, account_type='D', driver__vehicle__vehicle_type__iexact='SEDAN').all()))
+    bus_driver_user = random.choice(list(User.objects.filter(for_trip=True, account_type='D', driver__vehicle__vehicle_type__iexact='BUS').all()))
+    try:
+        car_driver: Driver = car_driver_user.driver
+    except User.driver.RelatedObjectDoesNotExist:
+        return Response(
+            {
+                'status': False,
+                'message': 'fetched car driver account is not a driver account'
+            }
+        )
+    if car_driver.vehicle is None:
+        return Response(
+            {
+                'status': False,
+                'message': 'fetched car driver account does not owns a vehicle yet'
+            }
+        )
+    car_vehicle = car_driver.vehicle
+    try:
+        bus_driver: Driver = bus_driver_user.driver
+    except User.driver.RelatedObjectDoesNotExist:
+        return Response(
+            {
+                'status': False,
+                'message': 'fetched bus driver account is not a driver account'
+            }
+        )
+    if bus_driver.vehicle is None:
+        return Response(
+            {
+                'status': False,
+                'message': 'fetched bus driver account does not owns a vehicle yet'
+            }
+        )
+    bus_vehicle = bus_driver.vehicle
+    querystring = {"origin": f"{float_formatter(jsn['from_lat'])},{float_formatter(jsn['from_lng'])}",
+                   "destination": f"{float_formatter(jsn['to_lat'])},{float_formatter(jsn['to_lng'])}"}
+    headers = {
+        "X-RapidAPI-Key": os.getenv('DIRECTION_API_KEY_HEADER', ''),
+        "X-RapidAPI-Host": os.getenv('DIRECTION_API_HOST_HEADER', '')
+    }
+    response = requests.request("GET", os.getenv('DIRECTION_API_ENDPOINT', 'http://localhost:3000/'), headers=headers,
+                                params=querystring).json()
+    if response is None:
+        return Response(
+            {
+                'status': False,
+                'message': 'something went wrong while getting route details from start to destination locations'
+            }
+        )
+    car_price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / car_vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    car_price += CAR_BASE_FARE
+    bus_price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / bus_vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    bus_price += BUS_BASE_FARE
+    return Response(
+        {
+            'status': True,
+            'car_price': car_price,
+            'bus_price': bus_price
+        }
+    )

@@ -1,5 +1,22 @@
 from rest_framework import serializers
+from user.models import Vehicle, BookedTrip
 from user.serializers import GeneralResponse
+
+
+class TripGeneralSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    start_destination_lat = serializers.FloatField()
+    start_destination_lng = serializers.FloatField()
+    end_destination_lat = serializers.FloatField()
+    end_destination_lng = serializers.FloatField()
+    from_location = serializers.CharField()
+    to_location = serializers.CharField()
+    price = serializers.FloatField()
+    state = serializers.ChoiceField(choices=BookedTrip.State.choices)
+    vehicle = serializers.IntegerField()
+    pickup_time = serializers.DateTimeField()
+    drop_time = serializers.DateTimeField()
+    payment = serializers.IntegerField(allow_null=True, required=False)
 
 
 class GeoLocationSerializer(serializers.Serializer):
@@ -111,3 +128,33 @@ class GetNearbyFamousLocationsResponse(serializers.Serializer):
     message = serializers.CharField(allow_null=True, required=False)
     locations = serializers.ListField(child=Location_GetNearbyFamousLocationsResponse(), allow_null=True,
                                       required=False)
+
+
+class GetTripPriceRequest(serializers.Serializer):
+    from_lat = serializers.FloatField()
+    from_lng = serializers.FloatField()
+    to_lat = serializers.FloatField()
+    to_lng = serializers.FloatField()
+
+
+
+class GetTripPriceResponse(GeneralResponse):
+    status = serializers.BooleanField()
+    car_price = serializers.FloatField()
+    bus_price = serializers.FloatField()
+
+
+class BookTripRequest(serializers.Serializer):
+    from_lat = serializers.FloatField()
+    from_lng = serializers.FloatField()
+    to_lat = serializers.FloatField()
+    to_lng = serializers.FloatField()
+    vehicle_type = serializers.ChoiceField(choices=Vehicle.Type.choices, default=Vehicle.Type.CAR_SEDAN)
+    from_location = serializers.CharField()
+    to_location = serializers.CharField()
+    pickup_time = serializers.CharField(default="29/11/1970 23:59")
+
+
+class BookTripResponse(GeneralResponse):
+    trip = serializers.IntegerField()
+    details = TripGeneralSerializer()

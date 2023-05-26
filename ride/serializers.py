@@ -34,7 +34,8 @@ class BookRideRequest(serializers.Serializer):
 
 
 class BookRideResponse(GeneralResponse):
-    ride = RideGeneralSerializer()
+    ride = serializers.IntegerField()
+    details = RideGeneralSerializer()
 
 
 class CancleRideRequest(serializers.Serializer):
