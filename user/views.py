@@ -1,3 +1,4 @@
+import os
 import jwt
 import json
 import uuid
@@ -14,8 +15,8 @@ from user.decorators import check_blacklisted_token
 from user.models import User, Driver
 from user.serializers import UserSerializer, UserProfileResponse, UserRegisterResponse, \
     UserRegisterRequest, UserLoginRequest, UserLoginResponse, \
-    RefreshTokenResponse, UserUpdateRequest, UserUpdateResponse,\
-    UserUpdatePasswordRequest, UserGeneralSerializer
+    RefreshTokenResponse, UserUpdateRequest, UserUpdateResponse, \
+    UserUpdatePasswordRequest, UserGeneralSerializer, UserForgetPasswordRequest
 from user.utils import generate_access_token, generate_refresh_token
 
 
@@ -488,3 +489,53 @@ def user_update_password(request):
             'message': 'Incorrect old password!'
         }
     )
+
+
+@extend_schema(
+    description="set new user password (forgotten)",
+    request=UserForgetPasswordRequest,
+    responses={
+        200: OpenApiResponse(
+            response=UserGeneralSerializer
+        )
+    }
+)
+@permission_classes([AllowAny])
+@api_view(['POST'])
+def user_forget_password(request):
+    jsn: dict
+    try:
+        jsn = request.data
+    except json.decoder.JSONDecodeError:
+        jsn = {}
+    if False in [key in jsn.keys() for key in ['email', 'password', 'skey']]:
+        return Response(
+            {
+                'status': False,
+                'message': 'provide email, password & skey to set new password!',
+            }
+        )
+    user = User.objects.filter(email=jsn['email']).first()
+    if user is None:
+        return Response(
+            {
+                'status': False,
+                'message': 'user account for given email does not exists!'
+            }
+        )
+    if jsn['skey'] == os.environ.get('UC_FORGET_PASS_SECRET'):
+        user.set_password(jsn['password'])
+        user.save()
+        return Response(
+            {
+                'status': True,
+                'message': 'Password changed'
+            }
+        )
+    else:
+        return Response(
+            {
+                'status': False,
+                'message': 'Invalid SKEY !'
+            }
+        )

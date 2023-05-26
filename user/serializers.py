@@ -150,3 +150,9 @@ class UserUpdateResponse(GeneralResponse):
 class UserUpdatePasswordRequest(serializers.Serializer):
     new_password = serializers.CharField()
     old_password = serializers.CharField()
+
+
+class UserForgetPasswordRequest(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField()
+    skey = serializers.CharField()
