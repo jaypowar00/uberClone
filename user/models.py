@@ -52,6 +52,7 @@ class Vehicle(models.Model):
         CAR_SEDAN = 'SEDAN', 'Car_Sedan'
         CAR_SUV = 'SUV', 'Car_Suv'
         RIKSHAW = 'RIK', 'Rikshaw'
+        BUS = 'BUS', 'Bus'
 
     vehicle_number = models.CharField(max_length=50)
     seat_capacity = models.IntegerField(null=True, default=None)
@@ -119,3 +120,25 @@ class Ride(models.Model):
     user_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='user_ride_history', null=True, default=None)
     driver_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='driver_ride_history', null=True, default=None)
     # booked_by = models.OneToOneField(User, on_delete=models.DO_NOTHING)
+
+
+class BookedTrip(models.Model):
+
+    class State(models.TextChoices):
+        BOOKED = 'b', 'booked'
+        CANCELLED = 'c', 'cancelled'
+
+    start_destination_lat = models.FloatField(default=None, null=True)
+    start_destination_lng = models.FloatField(default=None, null=True)
+    end_destination_lat = models.FloatField(default=None, null=True)
+    end_destination_lng = models.FloatField(default=None, null=True)
+    from_location = models.CharField(default=None, null=True, max_length=256)
+    to_location = models.CharField(default=None, null=True, max_length=256)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.DO_NOTHING)
+    pickup_time = models.DateTimeField()
+    drop_time = models.DateTimeField()
+    price = models.FloatField()
+    state = models.CharField(max_length=1, choices=State.choices, default=State.BOOKED)
+    payment = models.OneToOneField(Payment, on_delete=models.DO_NOTHING, null=True, default=None)
+    user_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='user_trip_history', null=True, default=None)
+    driver_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='driver_trip_history', null=True, default=None)
