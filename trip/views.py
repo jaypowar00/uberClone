@@ -279,8 +279,7 @@ def book_trip(request):
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def get_trip_price(request):
-    CAR_BASE_FARE = 20
-    BUS_BASE_FARE = 18
+    BASE_FARE = 10
     COST_PER_SEC = 0.1
     jsn = request.data
     if not ('from_lat' in jsn and 'from_lng' in jsn and 'to_lat' in jsn and 'to_lng' in jsn):
@@ -342,9 +341,9 @@ def get_trip_price(request):
             }
         )
     car_price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / car_vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
-    car_price += CAR_BASE_FARE
+    car_price += BASE_FARE
     bus_price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / bus_vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
-    bus_price += BUS_BASE_FARE
+    bus_price += BASE_FARE
     return Response(
         {
             'status': True,
@@ -368,22 +367,22 @@ def get_trip_price(request):
 def get_trip_history(request):
     user = request.user
     if user.account_type == user.AccountType.REGULAR:
-        trips = user.user_ride_history.all()
+        trips = user.user_trip_history.all()
         if not trips:
             return Response(
                 {
                     'status': True,
-                    'message': 'no history for previous rides',
+                    'message': 'no history for previous trips',
                     'rides': []
                 }
             )
     else:
-        trips = user.driver_ride_history.all()
+        trips = user.driver_trip_history.all()
         if not trips:
             return Response(
                 {
                     'status': True,
-                    'message': 'no history for previous rides',
+                    'message': 'no history for previous trips',
                     'rides': []
                 }
             )
