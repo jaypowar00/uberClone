@@ -36,10 +36,8 @@ from user.utils import get_nearby_drivers, float_formatter
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def book_ride(request):
-    CAR_BASE_FARE = 20
-    RIK_BASE_FARE = 15
-    BIK_BASE_FARE = 10
-    COST_PER_SEC = 0.1
+    BASE_FARE = 10
+    # COST_PER_SEC = 0.1
     user = request.user
     if user.account_type == User.AccountType.DRIVER:
         return Response(
@@ -115,13 +113,12 @@ def book_ride(request):
                     'message': 'something went wrong while getting route details from start to destination locations'
                 }
             )
-        price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
-        if driver.vehicle.vehicle_type == driver.vehicle.Type.BIKE:
-            price += BIK_BASE_FARE
-        elif driver.vehicle.vehicle_type == driver.vehicle.Type.RIKSHAW:
-            price += RIK_BASE_FARE
+        # price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+        if driver.vehicle.vehicle_type == driver.vehicle.Type.BIKE or driver.vehicle.vehicle_type == driver.vehicle.Type.RIKSHAW:
+            price = float_formatter(((response['route']['distance'] / 1000.0) * (float(os.getenv('UC_TRIP_PER_KM', '10')) - 1)), 2)
         else:
-            price += CAR_BASE_FARE
+            price = float_formatter(((response['route']['distance'] / 1000.0) * (float(os.getenv('UC_TRIP_PER_KM', '10')) + 1)), 2)
+        price += BASE_FARE
         from_location = jsn['from_location'][0:251]+"..." if len(jsn['from_location']) >= 255 else jsn['from_location']
         to_location = jsn['from_location'][0:251]+"..." if len(jsn['to_location']) >= 255 else jsn['to_location']
         try:

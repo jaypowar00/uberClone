@@ -178,8 +178,7 @@ def get_nearby_famous_locations(request):
 @permission_classes([IsAuthenticated])
 @check_blacklisted_token
 def book_trip(request):
-    CAR_BASE_FARE = 20
-    BUS_BASE_FARE = 25
+    BASE_FARE = 10
     COST_PER_SEC = 0.1
     user = request.user
     if user.account_type == User.AccountType.DRIVER:
@@ -232,10 +231,7 @@ def book_trip(request):
             }
         )
     price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
-    if driver.vehicle.vehicle_type == driver.vehicle.Type.BUS:
-        price += BUS_BASE_FARE
-    else:
-        price += CAR_BASE_FARE
+    price += BASE_FARE
     from_location = jsn['from_location'][0:251]+"..." if len(jsn['from_location']) >= 255 else jsn['from_location']
     to_location = jsn['from_location'][0:251]+"..." if len(jsn['to_location']) >= 255 else jsn['to_location']
     pickuptime = datetime.datetime.strptime(jsn["pickup_time"], "%d/%m/%Y %H:%S")
@@ -340,9 +336,11 @@ def get_trip_price(request):
                 'message': 'something went wrong while getting route details from start to destination locations'
             }
         )
-    car_price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / car_vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    # car_price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / car_vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    car_price = float_formatter(((response['route']['distance'] / 1000.0) * (float(os.getenv('UC_TRIP_PER_KM', '10')) + 1)), 2)
     car_price += BASE_FARE
-    bus_price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / bus_vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    # bus_price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / bus_vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    bus_price = float_formatter(((response['route']['distance'] / 1000.0) * (float(os.getenv('UC_TRIP_PER_KM', '10')) + 2)), 2)
     bus_price += BASE_FARE
     return Response(
         {
