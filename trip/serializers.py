@@ -1,7 +1,13 @@
 from rest_framework import serializers
-from user.models import Vehicle, BookedTrip
+from user.models import Vehicle, BookedTrip, Payment
 from user.serializers import GeneralResponse
 
+
+class PaymentTripSerializer(serializers.Serializer):
+    transaction_id = serializers.CharField()
+    amount = serializers.FloatField()
+    date = serializers.DateTimeField()
+    status = serializers.ChoiceField(choices=Payment.State.choices, default=Payment.State.FAILED)
 
 class TripGeneralSerializer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -16,7 +22,7 @@ class TripGeneralSerializer(serializers.Serializer):
     vehicle = serializers.IntegerField()
     pickup_time = serializers.DateTimeField()
     drop_time = serializers.DateTimeField()
-    payment = serializers.IntegerField(allow_null=True, required=False)
+    payment = PaymentTripSerializer()
 
 
 class GeoLocationSerializer(serializers.Serializer):

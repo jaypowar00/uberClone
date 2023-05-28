@@ -119,6 +119,7 @@ class Ride(models.Model):
     payment = models.OneToOneField(Payment, on_delete=models.DO_NOTHING, null=True, default=None)
     user_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='user_ride_history', null=True, default=None)
     driver_history = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='driver_ride_history', null=True, default=None)
+    created_at = models.DateTimeField(default=timezone.now)
     # booked_by = models.OneToOneField(User, on_delete=models.DO_NOTHING)
 
 

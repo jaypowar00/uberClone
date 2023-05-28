@@ -61,7 +61,7 @@ class RideSerializer(serializers.ModelSerializer):
         model = Ride
         fields = ["id", "start_destination_lat", "start_destination_lng", "end_destination_lat", "end_destination_lng",
                   "from_location", "to_location", "price", "state", "otp_verified", "vehicle", "payment", "user_history",
-                  "driver_history"]
+                  "driver_history", "created_at", ]
 
 
 class BookedTripSerializer(serializers.ModelSerializer):

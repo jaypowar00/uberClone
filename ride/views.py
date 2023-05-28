@@ -375,7 +375,7 @@ def verify_otp(request):
 def get_ride_history(request):
     user = request.user
     if user.account_type == user.AccountType.REGULAR:
-        rides = user.user_ride_history.filter(~Q(state=Ride.State.STARTED))[:10]
+        rides = user.user_ride_history.filter(~Q(state=Ride.State.STARTED)).order_by('-id')[:10]
         if not rides:
             return Response(
                 {
@@ -385,7 +385,7 @@ def get_ride_history(request):
                 }
             )
     else:
-        rides = user.driver_ride_history.filter(~Q(state=Ride.State.STARTED))
+        rides = user.driver_ride_history.filter(~Q(state=Ride.State.STARTED)).order_by('-id')[:10]
         if not rides:
             return Response(
                 {

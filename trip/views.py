@@ -11,7 +11,7 @@ from trip.serializers import GetLocationPathRequest, GetLocationPathResponse, \
     GetTripLocationsResponse, GetNearbyFamousLocationsRequest, GetNearbyFamousLocationsResponse, GetTripPriceRequest, \
     GetTripPriceResponse, BookTripRequest, BookTripResponse, GetTripHistoryResponse, PayTripRequest
 from user.decorators import check_blacklisted_token
-from user.models import TripLocations, User, Driver, BookedTrip, Payment
+from user.models import TripLocations, User, Driver, BookedTrip, Payment, Vehicle
 from user.serializers import TripLocationsSerializer, BookedTripSerializer, GeneralResponse
 from user.utils import float_formatter
 
@@ -214,7 +214,7 @@ def book_trip(request):
                 'message': 'fetched driver account does not owns a vehicle yet'
             }
         )
-    vehicle = driver.vehicle
+    vehicle: Vehicle = driver.vehicle
     # getting price for customer pickup location to destination location travelling
     querystring = {"origin": f"{float_formatter(jsn['from_lat'])},{float_formatter(jsn['from_lng'])}", "destination": f"{float_formatter(jsn['to_lat'])},{float_formatter(jsn['to_lng'])}"}
     headers = {
@@ -230,7 +230,11 @@ def book_trip(request):
                 'message': 'something went wrong while getting route details from start to destination locations'
             }
         )
-    price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    # price = float_formatter(((response['route']['distance'] / 1000.0) * 105) / vehicle.mileage + (COST_PER_SEC * response['route']['duration']), 2)
+    if vehicle.vehicle_type == vehicle.Type.BUS:
+        price = float_formatter(((response['route']['distance'] / 1000.0) * (float(os.getenv('UC_TRIP_PER_KM', '10')) + 2)), 2)
+    else:
+        price = float_formatter(((response['route']['distance'] / 1000.0) * (float(os.getenv('UC_TRIP_PER_KM', '10')) + 1)), 2)
     price += BASE_FARE
     from_location = jsn['from_location'][0:251]+"..." if len(jsn['from_location']) >= 255 else jsn['from_location']
     to_location = jsn['from_location'][0:251]+"..." if len(jsn['to_location']) >= 255 else jsn['to_location']
@@ -365,7 +369,7 @@ def get_trip_price(request):
 def get_trip_history(request):
     user = request.user
     if user.account_type == user.AccountType.REGULAR:
-        trips = user.user_trip_history.all()
+        trips = user.user_trip_history.all().order_by('-id')[:10]
         if not trips:
             return Response(
                 {
@@ -375,7 +379,7 @@ def get_trip_history(request):
                 }
             )
     else:
-        trips = user.driver_trip_history.all()
+        trips = user.driver_trip_history.all().order_by('-id')[:10]
         if not trips:
             return Response(
                 {

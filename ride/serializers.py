@@ -1,9 +1,14 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
-from user.models import Ride, Vehicle
+from user.models import Ride, Vehicle, Payment
 from user.serializers import GeneralResponse
 
 
+class TripRideSerializer(serializers.Serializer):
+    transaction_id = serializers.CharField()
+    amount = serializers.FloatField()
+    date = serializers.DateTimeField()
+    status = serializers.ChoiceField(choices=Payment.State.choices, default=Payment.State.FAILED)
 class RideGeneralSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     start_destination_lat = serializers.FloatField()
@@ -16,7 +21,7 @@ class RideGeneralSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=Ride.State.choices)
     otp_verified = serializers.BooleanField()
     vehicle = serializers.IntegerField()
-    payment = serializers.IntegerField(allow_null=True, required=False)
+    payment = TripRideSerializer()
 
 
 class UserRideResponse(GeneralResponse, RideGeneralSerializer):
