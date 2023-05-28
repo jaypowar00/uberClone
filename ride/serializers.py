@@ -9,6 +9,8 @@ class TripRideSerializer(serializers.Serializer):
     amount = serializers.FloatField()
     date = serializers.DateTimeField()
     status = serializers.ChoiceField(choices=Payment.State.choices, default=Payment.State.FAILED)
+
+
 class RideGeneralSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     start_destination_lat = serializers.FloatField()

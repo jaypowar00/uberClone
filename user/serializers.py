@@ -21,6 +21,7 @@ class VehicleSerializer(serializers.ModelSerializer):
         type_str = 'Sedan' if type_str == vehicle_obj.Type.CAR_SEDAN \
             else 'Suv' if type_str == vehicle_obj.Type.CAR_SUV \
             else 'Rikshaw' if type_str == vehicle_obj.Type.RIKSHAW \
+            else 'Bus' if type_str == vehicle_obj.Type.BUS \
             else 'BIKE'
         return type_str
 
